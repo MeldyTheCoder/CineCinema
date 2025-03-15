@@ -1,0 +1,44 @@
+services:
+  redis:
+    image: redis:latest
+    restart: always
+    command: redis-server --save 20 1 --loglevel warning
+    container_name: 'redis_service'
+    volumes:
+       - redis_cache:/data
+    ports:
+     - "6380:6379"
+
+  mysql_service:
+    image: mysql:latest
+    container_name: mysql_service
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=cine
+    volumes:
+      - mysql_volume:/var/lib/mysql
+    ports:
+      - "3307:3306"
+
+  backend:
+    build: ./backend
+    container_name: backend
+    command: bash -c "/wait && python main.py"
+    depends_on:
+      - mysql_service
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=mysql://root:1234@mysql_service:3306/cine
+      - HOST=0.0.0.0
+      - PORT=8080
+      - WAIT_HOSTS=mysql_service:3306, redis:6379
+      - WAIT_HOSTS_TIMEOUT=300
+      - WAIT_SLEEP_INTERVAL=15
+      - WAIT_HOST_CONNECT_TIMEOUT=30
+    ports:
+     - '8080:8080'
+
+volumes:
+  redis_cache:
+    driver: local
+  mysql_volume:
