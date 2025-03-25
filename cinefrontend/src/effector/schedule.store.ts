@@ -27,7 +27,7 @@ export const resetScheduleEv = createEvent<null>();
 const loadScheduleFx = createEffect<ScheduleRequest, TSchedule[], Error>({
     name: 'loadScheduleFx',
     handler: async (params) => {
-        const response = await app.get('/schedule/', {
+        const response = await app.get('/schedule', {
             params,
         });
         return response.data;

@@ -8,6 +8,7 @@ import {
   IconButton,
   EmptyState,
   VStack,
+  Center,
 } from "@chakra-ui/react";
 import { groupByKey } from "../utils/arrays";
 import { useMemo } from "react";
@@ -42,7 +43,7 @@ const DayRowContainer = chakra("div", {
     flexDirection: "column",
     gap: "5px",
     justifyContent: "center",
-    minWidth: "8rem",
+    minWidth: "10rem",
   },
 });
 
@@ -110,19 +111,21 @@ const BuyTicketButton = chakra(
 
 export function ScheduleEmptyState() {
   return (
-    <EmptyState.Root>
-      <EmptyState.Content>
-        <EmptyState.Indicator>
-          <MdSchedule />
-        </EmptyState.Indicator>
-        <VStack textAlign="center">
-          <EmptyState.Title>Ближайшие сеансы не найдены.</EmptyState.Title>
-          <EmptyState.Description>
-            К сожалению, в данный момент ближайшие сеансы отсутсвуют.
-          </EmptyState.Description>
-        </VStack>
-      </EmptyState.Content>
-    </EmptyState.Root>
+    <Center>
+      <EmptyState.Root width="auto">
+        <EmptyState.Content>
+          <EmptyState.Indicator>
+            <MdSchedule />
+          </EmptyState.Indicator>
+          <VStack textAlign="center">
+            <EmptyState.Title>Ближайшие сеансы не найдены.</EmptyState.Title>
+            <EmptyState.Description>
+              К сожалению, в данный момент ближайшие сеансы отсутсвуют.
+            </EmptyState.Description>
+          </VStack>
+        </EmptyState.Content>
+      </EmptyState.Root>
+    </Center>
   );
 }
 export function ScheduleCellPopover({

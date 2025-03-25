@@ -5,15 +5,23 @@ import {
   Text,
   Flex,
   Input,
+  Bleed,
+  Card,
   chakra,
   SimpleGrid,
   GridItem,
+  Link,
   Image,
+  Button,
 } from "@chakra-ui/react";
-import { InputGroup } from "./ui/input-group";
 import { Avatar } from "./ui/avatar";
-import { IoMdSearch } from "react-icons/io";
-import ReactLogo from '../assets/react.svg';
+import { BsGeoAltFill } from "react-icons/bs";
+import ReactLogo from "../assets/react.svg";
+import { useStoreMap, useUnit } from "effector-react";
+import { $tokenData, logoutFx } from "../effector/users.store";
+import { $selectedRegion } from "../effector/regions.store";
+import { useNavigate } from "react-router-dom";
+import { OfficesPopover } from "./regions-popover";
 
 const HeaderTab = chakra(Tabs.Trigger, {
   base: {
@@ -27,81 +35,92 @@ const TabText = chakra(
   { defaultProps: { fontSize: "18px" } }
 );
 
-const HeaderContainer = chakra(
-  Container,
-  { base: { marginY: "1rem", alignItems: "center" } },
-  {
-    defaultProps: { fluid: true },
-  }
-);
+const HeaderContainer = chakra("div", {
+  base: { padding: "1rem 3rem", alignItems: "center", marginBottom: "1rem" },
+});
 
 const SiteLogo = chakra(Image, {
   base: { aspectRatio: "1x1", borderRadius: "10px" },
 });
 
-const HeaderSearchInput = chakra(
-  Input,
-  {
-    base: {
-      borderRadius: "20px",
-      width: "100%",
-    },
-  },
-  { defaultProps: { placeholder: "Введите запрос" } }
-);
-
 export function Header() {
+  const navigate = useNavigate();
+  const [selectedRegion] = useUnit([$selectedRegion]);
+  const isAuthorized = useStoreMap($tokenData, (state) => !!state.accessToken);
+
+  const handleLogin = () => {
+    navigate("/login/");
+  };
+
+  const handleLogout = () => {
+    logoutFx().then(() => navigate("/"));
+  };
+
   return (
-    <HeaderContainer animationStyle={{ _open: "slide-fade-in", _closed: "slide-fade-out" }}>
-      <SimpleGrid columns={{ base: 10 }}>
-        <GridItem
-          colSpan={{ base: 2 }}
-          display={{ xl: "none", lg: "block" }}
-        >
-          <SiteLogo src={ReactLogo} />
-        </GridItem>
-        <GridItem
-          colSpan={{ lg: 2, base: 2 }}
-          display={{ xl: "flex", lg: "none", sm: "none", md: "none" }}
-          gap={5}
-          animationStyle={{ _open: "slide-fade-in", _closed: "slide-fade-out" }}
-        >
-          <SiteLogo src={ReactLogo} />
-          <Heading size="3xl">CineCinema</Heading>
-        </GridItem>
+    <Bleed>
+      <HeaderContainer
+        animationStyle={{ _open: "slide-fade-in", _closed: "slide-fade-out" }}
+        data-status="active"
+      >
+        <SimpleGrid columns={{ base: 10 }}>
+          <GridItem colSpan={{ base: 2 }} display={{ xl: "none", lg: "block" }}>
+            <SiteLogo src={ReactLogo} />
+          </GridItem>
+          <GridItem
+            colSpan={{ lg: 3, base: 3 }}
+            display={{ xl: "flex", lg: "none", sm: "none", md: "none" }}
+            gap={5}
+            animationStyle={{
+              _open: "slide-fade-in",
+              _closed: "slide-fade-out",
+            }}
+          >
+            <SiteLogo src={ReactLogo} />
 
-        <GridItem colSpan={{ lg: 4, md: 3, base: 6 }} marginLeft="auto" width="100%">
-          <InputGroup startElement={<IoMdSearch />} width="100%">
-            <HeaderSearchInput width="100%" />
-          </InputGroup>
-        </GridItem>
+            <Heading size="3xl">CineCinema</Heading>
 
-        <GridItem
-          colSpan={{ base: 3 }}
-          display={{ lg: "block", sm: "none", base: "none" }}
-          marginLeft="auto"
-        >
-          <Tabs.Root variant="plain" size="lg">
-            <Tabs.List>
-              <HeaderTab value="0">
-                <TabText>Главная</TabText>
-              </HeaderTab>
+            <OfficesPopover>
+              <Link variant="underline">
+                <BsGeoAltFill /> {selectedRegion?.title}
+              </Link>
+            </OfficesPopover>
+          </GridItem>
 
-              <HeaderTab value="1">
-                <TabText>О Нас</TabText>
-              </HeaderTab>
+          <GridItem
+            colSpan={{ base: 3 }}
+            display={{ lg: "block", sm: "none", base: "none" }}
+            marginLeft="auto"
+          >
+            <Tabs.Root variant="plain" size="lg">
+              <Tabs.List>
+                <HeaderTab value="0">
+                  <TabText>Главная</TabText>
+                </HeaderTab>
 
-              <HeaderTab value="2">
-                <TabText>Контакты</TabText>
-              </HeaderTab>
-            </Tabs.List>
-          </Tabs.Root>
-        </GridItem>
+                <HeaderTab value="1">
+                  <TabText>О Нас</TabText>
+                </HeaderTab>
 
-        <GridItem marginLeft="auto">
-          <Avatar size="xl" />
-        </GridItem>
-      </SimpleGrid>
-    </HeaderContainer>
+                <HeaderTab value="2">
+                  <TabText>Контакты</TabText>
+                </HeaderTab>
+              </Tabs.List>
+            </Tabs.Root>
+          </GridItem>
+
+          {isAuthorized ? (
+            <GridItem colSpan={{ base: 4 }} marginLeft="auto">
+              <Avatar size="xl" onClick={handleLogout} />
+            </GridItem>
+          ) : (
+            <GridItem colSpan={{ base: 4 }} marginLeft="auto">
+              <Button colorPalette="cyan" size="lg" onClick={handleLogin}>
+                Войти
+              </Button>
+            </GridItem>
+          )}
+        </SimpleGrid>
+      </HeaderContainer>
+    </Bleed>
   );
 }

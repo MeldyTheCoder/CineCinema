@@ -68,11 +68,12 @@ export const authenticateFx = createEffect<TValidatePhoneResponse, TokenStorage,
     }
 });
 
-export const logoutFx = createEffect<void, void, Error>({
+export const logoutFx = createEffect<void, TokenStorage, Error>({
     name: 'logoutFx',
     handler: async () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('tokenType');
+        return {accessToken: "", tokenType: ""} as TokenStorage
     }
 });
 export const loginEv = createEvent<TValidatePhoneRequest>();
@@ -108,4 +109,9 @@ sample({
 sample({
     clock: authenticateFx,
     target: loadAuthenticatedUserFx,
+});
+
+sample({
+    clock: logoutFx.doneData,
+    target: $tokenData,
 })

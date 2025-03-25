@@ -11,20 +11,18 @@ import { LocaleProvider } from "@chakra-ui/react";
 
 function renderRoot() {
   createRoot(document.getElementById("root")!).render(
-    <StrictMode>
-      <LocaleProvider locale="ru-RU">
-        <Provider>
-          <Toaster />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" Component={Index} />
-              <Route path="/film/:filmId" Component={Film} />
-              <Route path="/login/" Component={Login} />
-            </Routes>
-          </BrowserRouter>
-        </Provider>
-      </LocaleProvider>
-    </StrictMode>
+    <LocaleProvider locale="ru-RU">
+      <Provider>
+        <Toaster />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" Component={Index} />
+            <Route path="/film/:filmId" Component={Film} />
+            <Route path="/login/" Component={Login} />
+          </Routes>
+        </BrowserRouter>
+      </Provider>
+    </LocaleProvider>
   );
 }
 

@@ -19,8 +19,11 @@ export const loadRegionsFx = createEffect<void, TRegion[], Error>({
     }
 })
 
+export const setRegionEv = createEvent<TRegion>();
+
 $regions.reset(resetRegionsEv);
 $regions.on(loadRegionsFx.doneData, (_, regions) => regions);
+$selectedRegion.on(setRegionEv, (_, region) => region);
 
 export const $regionsLoading = pending([loadRegionsFx]);
 
@@ -28,3 +31,9 @@ sample({
     clock: loadRegionsEv,
     target: loadRegionsFx,
 });
+
+sample({
+    clock: loadRegionsFx.doneData,
+    target: $selectedRegion,
+    fn: (regions) => regions.length > 0 ? regions[0] : null,
+})

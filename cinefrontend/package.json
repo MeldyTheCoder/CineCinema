@@ -11,9 +11,10 @@
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",
-    "@chakra-ui/react": "^3.9.0",
+    "@chakra-ui/react": "^3.13.0",
     "@emotion/react": "^11.14.0",
     "@tanstack/react-form": "^1.0.2",
+    "@yandex/ymaps3-types": "^1.0.16159873",
     "axios": "^1.8.1",
     "dayjs": "^1.11.13",
     "effector": "^23.3.0",
