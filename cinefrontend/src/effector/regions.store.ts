@@ -3,6 +3,7 @@ import { TRegion } from '../types';
 import { AxiosResponse } from 'axios';
 import { app } from '../app';
 import { pending } from 'patronum';
+import { camelArray } from '../utils/camelCase';
 
 
 export const $regions = createStore<TRegion[]>([]);
@@ -15,7 +16,7 @@ export const loadRegionsFx = createEffect<void, TRegion[], Error>({
     name: 'loadRegionsFx',
     handler: async () => {
         const response = await app.get<any, AxiosResponse<TRegion[]>>(`/regions/`);
-        return response.data;
+        return camelArray<TRegion[]>(response.data);
     }
 })
 

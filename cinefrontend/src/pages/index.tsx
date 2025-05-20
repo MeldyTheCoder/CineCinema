@@ -2,7 +2,7 @@ import { Container, Flex, Stack, createListCollection } from "@chakra-ui/react";
 import { Header } from "../components/header";
 import { announces } from "../test";
 import { AnnounceCard } from "../components/announce-card";
-import { FilmsList } from "../components/films-list";
+import { FilmsList } from "../components/films/films-list";
 import { TFilm, TGenre } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useUnit } from "effector-react";
@@ -19,8 +19,9 @@ import {
 import Slider from "react-slick";
 import { styled } from "styled-components";
 
-const StyledSlider = styled(Slider)`
-  
+export const StyledSlider = styled(Slider)`
+  width: 100%;
+
   .slick-track {
     height: 390px;
   }
@@ -69,7 +70,7 @@ function AnouncesSlider() {
   );
 }
 export function Index() {
-  const [films] = useUnit([$films]);
+  const [films, loadFilms] = useUnit([$films, loadFilmsEv]);
   const navigate = useNavigate();
 
   const handleFilmClick = (film: TFilm) => {
@@ -77,11 +78,14 @@ export function Index() {
   };
 
   const genres = useMemo<TGenre[]>(
-    () =>
-      filterByUnique<TGenre>(
-        films.map((film) => (film.genres || []).map((genre) => genre!)).flat(),
+    () => {
+      console.log(films[0]);
+
+      return filterByUnique<TGenre>(
+        films.map((film) => (film?.genres! || []).map((genre) => genre!)).flat(),
         (genre: TGenre) => genre?.id
-      ),
+      )
+    },
     [films]
   );
 
@@ -96,7 +100,8 @@ export function Index() {
   );
 
   useEffect(() => {
-    loadFilmsEv();
+    loadFilms();
+    console.log(films);
   }, []);
 
   return (

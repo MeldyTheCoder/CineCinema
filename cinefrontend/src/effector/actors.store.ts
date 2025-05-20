@@ -4,6 +4,7 @@ import { app } from "../app";
 import { loadFilmFx } from "./films.store";
 import {pending} from 'patronum';
 import { wait } from "./timer.store";
+import { camelArray } from "../utils/camelCase";
 
 type FilmActorsRequest = {
   filmId: number;
@@ -23,7 +24,7 @@ export const loadFilmActorsFx = createEffect<
   handler: async ({ filmId }) => {
     await wait(500);
     const response = await app.get(`/actors/for-film/${filmId}/`);
-    return response.data as TFilmActor[];
+    return camelArray<TFilmActor[]>(response.data);
   },
 });
 

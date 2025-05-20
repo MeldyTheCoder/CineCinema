@@ -1,21 +1,29 @@
-import React, {useEffect} from 'react';
-import {Header} from '../components/header';
-import {LoginForm} from '../components/login-form';
-import {useStoreMap} from 'effector-react';
-import {$tokenData} from '../effector/users.store.ts';
-import { Navigate } from 'react-router-dom';
+import React, { useEffect, useMemo } from "react";
+import { Header } from "../components/header";
+import { LoginForm } from "../components/login-form";
+import { useStoreMap } from "effector-react";
+import { $tokenData } from "../effector/users.store.ts";
+import { Navigate, useSearchParams } from "react-router-dom";
+import { Container } from "@chakra-ui/react";
 
 export function Login() {
-    const isAuthorized = useStoreMap($tokenData, (state) => !!state.accessToken) 
+  const [params] = useSearchParams();
+  const isAuthorized = useStoreMap($tokenData, (state) => !!state.accessToken);
 
-    if (isAuthorized) {
-        return <Navigate to="/" />
-    }
+  const fallbackUrl = useMemo(() => {
+    return params.get('next')
+  }, [params]);
 
-    return (
-        <>
-            <Header />
-            <LoginForm />
-        </>
-    )
+  if (isAuthorized) {
+    return <Navigate to={fallbackUrl ? fallbackUrl : "/"} />;
+  }
+
+  return (
+    <>
+      <Header />
+      <Container>
+        <LoginForm />
+      </Container>
+    </>
+  );
 }

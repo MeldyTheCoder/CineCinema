@@ -5,11 +5,12 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
-    "module": "ESNext",
+    "module": "ES2022",
     "moduleResolution": "Bundler",
     "skipLibCheck": true,
     "paths": {
       "@/*": ["./src/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", "dist", "src/components/ui"]
 }

@@ -10,19 +10,21 @@ import {
   VStack,
   Center,
 } from "@chakra-ui/react";
-import { groupByKey } from "../utils/arrays";
+import { groupByKey } from "../../utils/arrays";
 import { useMemo } from "react";
-import { TSchedule } from "../types";
+import { TSchedule } from "../../types";
 import {
   PopoverBody,
   PopoverContent,
   PopoverRoot,
   PopoverTrigger,
   PopoverArrow,
-} from "./ui/popover";
-import { getByDayId, getTimeFromSeconds, getCurrentDate } from "../utils/dates";
+} from "../ui/popover";
+import { getByDayId, getTimeFromSeconds, getCurrentDate } from "../../utils/dates";
 import { FaCartArrowDown } from "react-icons/fa6";
 import { MdSchedule } from "react-icons/md";
+import {$schedule} from '../../effector/schedule.store';
+import { useUnit } from "effector-react";
 
 type DayRowProps = {
   readonly dayId: number;
@@ -139,7 +141,7 @@ export function ScheduleCellPopover({
         <PopoverArrow />
         <PopoverBodyRelative>
           <Text textStyle="lg" fontWeight="bold">
-            {schedule.film.price * schedule.hall.price_factor} RUB
+            {schedule.film.price * schedule.hall.priceFactor} RUB
           </Text>
           <Text>Зал: {schedule.hall.title}</Text>
           <BuyTicketButton>
@@ -187,11 +189,12 @@ export function DayRow({ dayId, year, schedule, onCellSelect }: DayRowProps) {
 }
 
 type ScheduleProps = {
-  readonly scheduleList: TSchedule[];
   readonly onTimeSelect?: (_: TSchedule) => void;
 };
 
-export function Schedule({ scheduleList, onTimeSelect }: ScheduleProps) {
+export function Schedule({ onTimeSelect }: ScheduleProps) {
+  const [schedule] = useUnit([$schedule]);
+
   const handleCellSelect = (schedule: TSchedule) => {
     onTimeSelect?.(schedule);
   };
@@ -201,8 +204,8 @@ export function Schedule({ scheduleList, onTimeSelect }: ScheduleProps) {
       Object.fromEntries(
         Object.entries(
           groupByKey<TSchedule>(
-            [...scheduleList].sort((prev, next) => prev.time - next.time),
-            (_s: TSchedule) => `${_s.day_id}:${_s.year}`
+            [...schedule].sort((prev, next) => prev.time - next.time),
+            (_s: TSchedule) => `${_s.dayId}:${_s.year}`
           )
         ).sort(([prevDateString], [currentDateString]) => {
           const [prevDayId, prevYear] = prevDateString.split(":", 2);
@@ -214,7 +217,7 @@ export function Schedule({ scheduleList, onTimeSelect }: ScheduleProps) {
           return currentDate.isBefore(prevDate) ? 1 : 0;
         })
       ),
-    [scheduleList]
+    [schedule]
   );
 
   return (

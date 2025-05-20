@@ -49,7 +49,7 @@ export function AnnounceCard({ announce }: AnnounceCard) {
   return (
     <ImageContainer transition="scale 0.3s" _hover={{scale: 1.03}}>
       <Image
-        src={announce.cover_url}
+        src={announce.coverUrl}
         width={700}
         height={370}
         aspectRatio="16x9"

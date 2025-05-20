@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Container,
   Grid,
@@ -16,42 +16,57 @@ import {
   Link,
   Stack,
   Card,
+  Bleed,
   Skeleton,
   Spinner,
   Button,
-  Badge,
   Center,
+  Badge,
+  Box,
+  Group,
+  RatingGroup,
 } from "@chakra-ui/react";
 import { Header } from "../components/header";
-import { Schedule, ScheduleEmptyState } from "../components/schedule";
-import { loadFilmEv, $film, $filmsLoading } from "../effector/films.store";
+import { Schedule, ScheduleEmptyState } from "../components/films/schedule";
+import {
+  loadFilmEv,
+  $film,
+  $filmsLoading,
+  loadFilmFx,
+  $filmAttachments,
+  $filmAttachmentsLoading,
+} from "../effector/films.store";
 import {
   $schedule,
   $scheduleLoading,
   loadScheduleEv,
 } from "../effector/schedule.store.ts";
-import { useParams } from "react-router-dom";
-import { useUnit } from "effector-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useStoreMap, useUnit } from "effector-react";
 import { formatDuration, dayjs } from "../utils/dates.ts";
 import {
   ActorsList,
   ActorsListEmptyState,
-} from "../components/ actors-list.tsx";
-import { GenresTags } from "../components/genres-tags.tsx";
+} from "../components/films/actors-list.tsx";
+import { GenresTags } from "../components/films/genres-tags.tsx";
 import { $filmActors, $actorsLoading } from "../effector/actors.store.ts";
 import { $selectedRegion } from "../effector/regions.store.ts";
-import {
-  $offices,
-  $officesLoading,
-  loadOfficesEv,
-  loadOfficesFx,
-} from "../effector/offices.store.ts";
+import { $offices, $officesLoading } from "../effector/offices.store.ts";
 import { OfficeSelect } from "../components/office-select.tsx";
-import { TFilm, TOffice, TSchedule } from "../types";
+import { TFilm, TFilmAttachment, TOffice, TSchedule, TSeat } from "../types";
 import { FaBuilding } from "react-icons/fa";
 import { RiCalendarScheduleLine } from "react-icons/ri";
-import { MdAirlineSeatReclineNormal } from "react-icons/md";
+import { z, infer } from "zod";
 import { StageBlockForm } from "../components/stages-block.tsx";
+import { MdEventSeat } from "react-icons/md";
+import { CinemaScreen } from "../components/cinema-screen.tsx";
+import { SeatsGrid } from "../components/seats-grid.tsx";
+import { BsStar } from "react-icons/bs";
+import { AgeVerificationModal } from "../components/films/age-verification-modal.tsx";
+import Slider from "react-slick";
+import { styled } from "styled-components";
+import Masonry from "react-masonry-css";
+import { AttachmentsList } from "../components/films/attachments-list.tsx";
 
 const Divider = chakra(Separator, {
   base: {
@@ -69,6 +84,17 @@ type StageFormProps = Partial<{
   schedule: TSchedule;
   seat: any;
 }>;
+
+const carouselSettings = {
+  dots: true,
+  infinite: true,
+  speed: 500,
+  slidesToShow: 2,
+  slidesToScroll: 1,
+  autoplay: true,
+  arrows: false,
+  centerMode: true,
+};
 
 function FilmOrder({ film, onRecord }: FilmOrderProps) {
   const [offices, schedule, officesLoading, scheduleLoading] = useUnit([
@@ -96,6 +122,8 @@ function FilmOrder({ film, onRecord }: FilmOrderProps) {
       <Heading>
         Выберите <Link variant="underline">время</Link>
       </Heading>
+    ) : value ? (
+      <Card.Root>{value.time}</Card.Root>
     ) : (
       <Text fontWeight="bold">Время</Text>
     );
@@ -110,6 +138,19 @@ function FilmOrder({ film, onRecord }: FilmOrderProps) {
     }
   };
 
+  const getLabelForSeat = (active: boolean, value: TSeat) =>
+    active ? (
+      <Heading>
+        Выберите <Link variant="underline">место</Link>
+      </Heading>
+    ) : value ? (
+      <Card.Root padding="5px">
+        {value.row} ряд {value.column} место
+      </Card.Root>
+    ) : (
+      <Text fontWeight="bold">Место</Text>
+    );
+
   return (
     <Stack gap={10} direction="column">
       <StageBlockForm.Root<StageFormProps>
@@ -120,6 +161,7 @@ function FilmOrder({ film, onRecord }: FilmOrderProps) {
           name="office"
           icon={<FaBuilding />}
           label={getLabelForOffice}
+          validator={z.any()}
         >
           {({ handleNext, handleChange, value }) => (
             <>
@@ -128,11 +170,10 @@ function FilmOrder({ film, onRecord }: FilmOrderProps) {
               ) : (
                 <Stack gap={5}>
                   <OfficeSelect
-                    elements={offices}
                     value={value!}
                     onSelect={(office) => handleChange(office)}
                   />
-                  <Button onClick={() => handleNext()} disabled={!value}>
+                  <Button onClick={handleNext} disabled={!value}>
                     Далее
                   </Button>
                 </Stack>
@@ -143,6 +184,7 @@ function FilmOrder({ film, onRecord }: FilmOrderProps) {
 
         <StageBlockForm.Block
           name="schedule"
+          validator={z.any()}
           icon={<RiCalendarScheduleLine />}
           label={getLabelForSchedule}
         >
@@ -155,8 +197,10 @@ function FilmOrder({ film, onRecord }: FilmOrderProps) {
               ) : (
                 <Stack gap={5}>
                   <Schedule
-                    scheduleList={schedule}
-                    onTimeSelect={(schedule) => handleChange(schedule)}
+                    onTimeSelect={(schedule) => {
+                      handleChange(schedule);
+                      handleNext();
+                    }}
                   />
                   <Button onClick={handleNext}>Далее</Button>
                 </Stack>
@@ -164,25 +208,70 @@ function FilmOrder({ film, onRecord }: FilmOrderProps) {
             </>
           )}
         </StageBlockForm.Block>
+
+        <StageBlockForm.Block
+          name="seat"
+          validator={z.any()}
+          icon={<MdEventSeat />}
+          label={getLabelForSeat}
+        >
+          {({ handleNext, handleChange }) => (
+            <Stack gap={5}>
+              <Box
+                borderWidth={1}
+                borderStyle="solid"
+                borderColor="gray.800"
+                padding="20px"
+                borderRadius="15px"
+                bg="gray.900"
+              >
+                <Stack gap={5}>
+                  <CinemaScreen />
+                  <SeatsGrid hallId={1} />
+                </Stack>
+              </Box>
+
+              <Button onClick={handleNext}>Далее</Button>
+            </Stack>
+          )}
+        </StageBlockForm.Block>
       </StageBlockForm.Root>
     </Stack>
   );
 }
+
 export function Film() {
+  const navigate = useNavigate();
   const { filmId } = useParams();
-  const [film, actors, loadFilm, filmLoading, actorsLoading] = useUnit([
+  const [
+    film,
+    actors,
+    loadFilm,
+    filmLoading,
+    actorsLoading,
+    attachments,
+    attachmentsLoading,
+  ] = useUnit([
     $film,
     $filmActors,
     loadFilmEv,
     $filmsLoading,
     $actorsLoading,
-    $selectedRegion,
-    $offices,
+    $filmAttachments,
+    $filmAttachmentsLoading,
   ]);
+
+  const handleOrderFilm = () => {
+    if (!film) {
+      return;
+    }
+    navigate(`/order/?filmId=${film.id}`)
+  }
 
   useEffect(() => {
     loadFilm({ filmId: +filmId! });
   }, [filmId]);
+
 
   return (
     <>
@@ -196,7 +285,7 @@ export function Film() {
             alignItems="center"
           >
             <Skeleton loading={filmLoading} width={400} aspectRatio="portrait">
-              <Image src={film?.cover_url} width={400} />
+              <Image src={film?.coverUrl} width={400} />
             </Skeleton>
           </GridItem>
 
@@ -213,17 +302,18 @@ export function Film() {
                   minWidth={70}
                   colorPalette="green"
                 >
-                  <GenresTags genres={film?.genres || []} />
+                  <Group>
+                    <GenresTags genres={film?.genres || []} />
+                    <Badge
+                      background="gray.800"
+                      colorPalette="gray"
+                      borderRadius="lg"
+                    >
+                      {film?.ageRestriction}+
+                    </Badge>
+                  </Group>
                 </Skeleton>
               </Flex>
-
-              <Skeleton loading={filmLoading} asChild minHeight={7}>
-                <Blockquote.Root>
-                  <BlockquoteContent>
-                    <Text>{film?.description}</Text>
-                  </BlockquoteContent>
-                </Blockquote.Root>
-              </Skeleton>
             </Flex>
 
             <Divider />
@@ -234,7 +324,7 @@ export function Film() {
                   <DataList.ItemLabel>Продолжительность</DataList.ItemLabel>
                   <DataList.ItemValue>
                     <Skeleton loading={filmLoading} minWidth={150}>
-                      {formatDuration(film?.duration_seconds || 0)}
+                      {formatDuration(film?.durationSeconds || 0)}
                     </Skeleton>
                   </DataList.ItemValue>
                 </DataList.Item>
@@ -261,8 +351,8 @@ export function Film() {
                   <DataList.ItemLabel>Дата проката</DataList.ItemLabel>
                   <DataList.ItemValue>
                     <Skeleton loading={filmLoading} minWidth={48}>
-                      с {dayjs(film?.active_date_from).format("DD MMMM")} по{" "}
-                      {dayjs(film?.active_date_to).format("DD MMMM")}
+                      с {dayjs(film?.activeDateFrom).format("DD MMMM")} по{" "}
+                      {dayjs(film?.activeDateTo).format("DD MMMM")}
                     </Skeleton>
                   </DataList.ItemValue>
                 </DataList.Item>
@@ -275,7 +365,7 @@ export function Film() {
                         ? actors
                             .map(
                               (filmActor) =>
-                                `${filmActor.actor.first_name} ${filmActor.actor.last_name}`
+                                `${filmActor.actor.firstName} ${filmActor.actor.lastName}`
                             )
                             .join(", ")
                         : "-"}
@@ -284,15 +374,72 @@ export function Film() {
                 </DataList.Item>
               </DataList.Root>
 
+              <Group>
+                <Button
+                  variant="subtle"
+                  colorPalette="purple"
+                  size="lg"
+                  borderRadius="15px"
+                  loading={filmLoading}
+                  onClick={handleOrderFilm}
+                >
+                  Смотреть!
+                </Button>
+                <Button variant="subtle" borderRadius="15px" loading={filmLoading}>
+                  <BsStar />
+                </Button>
+              </Group>
+
               <Tabs.Root defaultValue="0" size="lg">
                 <Tabs.List>
-                  <Tabs.Trigger value="0">Ближайшие сеансы</Tabs.Trigger>
-                  <Tabs.Trigger value="1">Актеры</Tabs.Trigger>
+                  <Tabs.Trigger value="0">Описание</Tabs.Trigger>
+                  <Tabs.Trigger value="1">Галерея</Tabs.Trigger>
+                  <Tabs.Trigger value="2">Актеры</Tabs.Trigger>
                 </Tabs.List>
                 <Tabs.Content value="0">
-                  <FilmOrder film={film!} />
+                  <Stack direction="column" gap={10}>
+                    {filmLoading ? (
+                      <Stack direction="column" gap={2}>
+                        {Array(5)
+                          .fill(0)
+                          .map(() => (
+                            <Skeleton loading minHeight={5} />
+                          ))}
+                      </Stack>
+                    ) : (
+                      <Text>{film?.description}</Text>
+                    )}
+                    <Stack direction="row" gap={10} alignItems="center">
+                      <Stack direction="column" gap={2}>
+                        <Text textStyle="2xl" fontWeight="bold">
+                          Рейтинг фильма
+                        </Text>
+                        <Skeleton loading={filmLoading}>
+                          <RatingGroup.Root
+                            count={10}
+                            value={Math.floor(film?.rating!)}
+                            size="lg"
+                            disabled
+                            colorPalette="purple"
+                          >
+                            <RatingGroup.HiddenInput />
+                            <RatingGroup.Control />
+                          </RatingGroup.Root>
+                        </Skeleton>
+                      </Stack>
+
+                      <Text color="green" fontSize="30px">
+                        <Skeleton minHeight={10} loading={filmLoading}>
+                          {film?.rating}
+                        </Skeleton>
+                      </Text>
+                    </Stack>
+                  </Stack>
                 </Tabs.Content>
                 <Tabs.Content value="1">
+                  <AttachmentsList attachments={attachments!} />
+                </Tabs.Content>
+                <Tabs.Content value="2">
                   {actorsLoading ? (
                     <Center>
                       <Spinner size="lg" />
@@ -308,6 +455,7 @@ export function Film() {
           </GridItem>
         </Grid>
       </Container>
+      {!!film && <AgeVerificationModal film={film!} />}
     </>
   );
 }

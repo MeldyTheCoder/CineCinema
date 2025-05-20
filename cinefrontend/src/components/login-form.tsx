@@ -17,7 +17,9 @@ import {
   Button,
   Image,
   Link,
+  AbsoluteCenter,
   usePinInput,
+  Box,
 } from "@chakra-ui/react";
 import { MdSms } from "react-icons/md";
 import { z } from "zod";
@@ -44,11 +46,13 @@ const FormContainer = chakra(
       gap: "20px",
       paddingX: "25px",
       paddingY: "20px",
-      position: "relative",
+      _open: {
+        animation: "fade-in 500ms ease-out",
+      },
     },
   },
   {
-    defaultProps: { width: "sm" },
+    defaultProps: { width: "sm", "data-state": "open" },
   }
 );
 
@@ -208,6 +212,11 @@ function CodeInputStage({ error, onError, onSubmit }: FormStageProps<string>) {
   );
 }
 
+type LoginFormProps = {
+  readonly onPhoneSubmit: (_: string) => void;
+  readonly onCodeSubmit: (_: string) => void;
+}
+
 export function LoginForm() {
   const [codeSent, setCodeSent] = useState<boolean>(false);
   const [phoneError, setPhoneError] = useState<string>("");
@@ -231,28 +240,30 @@ export function LoginForm() {
   };
 
   return (
-    <Container centerContent>
-      <FormContainer>
-        {!!codeSent && (
-          <BackButton onClick={() => setCodeSent(false)}>
-            <FaArrowLeft />
-          </BackButton>
-        )}
+    <Box position="relative" minH="60vh">
+      <AbsoluteCenter axis="both">
+        <FormContainer>
+          {!!codeSent && (
+            <BackButton onClick={() => setCodeSent(false)}>
+              <FaArrowLeft />
+            </BackButton>
+          )}
 
-        {!codeSent ? (
-          <PhoneInputStage
-            error={phoneError}
-            onSubmit={handlePhoneSubmit}
-            onError={(error) => setPhoneError(error)}
-          />
-        ) : (
-          <CodeInputStage
-            error={codeError}
-            onSubmit={handleCodeSubmit}
-            onError={(error) => setCodeError(error)}
-          />
-        )}
-      </FormContainer>
-    </Container>
+          {!codeSent ? (
+            <PhoneInputStage
+              error={phoneError}
+              onSubmit={handlePhoneSubmit}
+              onError={(error) => setPhoneError(error)}
+            />
+          ) : (
+            <CodeInputStage
+              error={codeError}
+              onSubmit={handleCodeSubmit}
+              onError={(error) => setCodeError(error)}
+            />
+          )}
+        </FormContainer>
+      </AbsoluteCenter>
+    </Box>
   );
 }

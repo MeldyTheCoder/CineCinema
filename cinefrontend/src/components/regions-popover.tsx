@@ -19,8 +19,7 @@ type OfficesPopoverProps = {
 
 export function OfficesPopover({ children }: OfficesPopoverProps) {
   const [searchString, setSearchString] = useState<string>("");
-  const [offices, regions, selectedRegion, setRegion] = useUnit([
-    $offices,
+  const [regions, selectedRegion, setRegion] = useUnit([
     $regions,
     $selectedRegion,
     setRegionEv,
@@ -41,6 +40,10 @@ export function OfficesPopover({ children }: OfficesPopoverProps) {
   useEffect(() => {
     loadRegionsEv();
   }, []);
+
+  useEffect(() => {
+    console.log(regions);
+  }, [regions])
 
   return (
     <Popover.Root>

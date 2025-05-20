@@ -1,6 +1,6 @@
 import { Badge, Wrap } from "@chakra-ui/react";
-import { TGenre } from "../types";
-import { stringToColor } from "../utils/arrays";
+import { TGenre } from "../../types";
+import { stringToColor } from "../../utils/arrays";
 
 type GenresTagsProps = {
   readonly genres: TGenre[];

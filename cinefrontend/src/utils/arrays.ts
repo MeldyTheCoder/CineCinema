@@ -25,7 +25,6 @@ export function stringToColor(value: string, saturation: number = 100, lightness
   }
 
 export function filterByUnique<T extends any>(array: T[], filterFn: (_: T) => string | number): T[] {
-    console.log(array);
     const result = array.reduce((acc, value) => {
         const key = filterFn(value);
         if (!acc[key]) {
@@ -33,6 +32,26 @@ export function filterByUnique<T extends any>(array: T[], filterFn: (_: T) => st
         }
         return acc;
     }, {});
-    console.log(result);
     return (Object.values(result).flat() as T[]);
+}
+
+/**
+* Вывод следующего элемента списка
+*/
+export function getNextArrayElement<T extends any>(currentItem: T, array: Array<T>): T {
+  const currentIndex = array.indexOf(currentItem);
+  const nextIndex = currentIndex + 1;
+  if (nextIndex > array.length) {
+    return currentItem;
+  }
+  return array[nextIndex];
+}
+
+/**
+* Вывод прошлого элемента списка
+*/
+export function getPrevArrayElement<T extends any>(currentItem: T, array: T[]): T {
+  const currentIndex = array.indexOf(currentItem);
+  const prevIndex = currentIndex - 1;
+  return array[prevIndex];
 }

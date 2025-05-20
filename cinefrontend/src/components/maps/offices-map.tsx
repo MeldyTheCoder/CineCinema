@@ -1,40 +1,56 @@
-import { useEffect, useRef } from "react";
+import { YMaps, Map, Placemark } from "react-yandex-maps";
 import { TOffice } from "../../types";
-import { useYaMaps } from "./use-ymaps";
+import { useMemo } from "react";
 import { Card } from "@chakra-ui/react";
+import { useUnit } from "effector-react";
+import { $selectedRegion } from "../../effector/regions.store";
+
+type CoordsType = {
+  center: [number, number];
+  zoom: number;
+}
 
 type OfficesMapProps = {
-  readonly selectedOffice?: TOffice;
   readonly offices: TOffice[];
+  readonly selectedOffice?: TOffice;
+  readonly onOfficeSelect?: (_: TOffice) => void;
 };
 
-export function OfficesMap({ selectedOffice, offices }: OfficesMapProps) {
-  const root = useRef<HTMLDivElement>(null);
-  const [map, isReady] = useYaMaps();
+const DEFAULT_ZOOM = 9;
+const INITIAL_COORDS: CoordsType = {center: [56.85836, 35.90057], zoom: DEFAULT_ZOOM};
 
-  useEffect(() => {
-    if (isReady && root.current && map) {
-      map.RenderMap(root.current);
-      if (offices) {
-        offices.forEach((office) => {
-          map.AddMarker([Number(office.longitude), Number(office.latitude)]);
-        });
-      }
-    }
-  }, [map, isReady, root, offices]);
+export function OfficesMap({
+  offices,
+  selectedOffice,
+  onOfficeSelect,
+}: OfficesMapProps) {
+  const [selectedRegion] = useUnit([$selectedRegion]);
 
-  useEffect(() => {
-    if (map && selectedOffice) {
-      map.ChangeLocation([
-        Number(selectedOffice.longitude),
-        Number(selectedOffice.latitude),
-      ]);
+  const initialCoords: CoordsType = selectedRegion ? {center: [selectedRegion.latitude, selectedRegion.longitude], zoom: 9} : INITIAL_COORDS;
+  const currentCoords: CoordsType = useMemo(() => {
+    if (selectedOffice) {
+      return {center: [selectedOffice.latitude, selectedOffice.longitude], zoom: 15};
     }
-  }, [map, selectedOffice]);
+    return initialCoords;
+  }, [selectedOffice]);
 
   return (
-    <Card.Root width="100%" height={300}>
-      <div ref={root} style={{ width: "auto", height: "auto" }} />
+    <Card.Root width="100%" height="250px">
+      <YMaps>
+        <Map
+          state={currentCoords}
+          defaultState={initialCoords}
+          width="100%"
+          height="250px"
+        >
+          {offices.map((office) => (
+            <Placemark
+              geometry={[office.latitude, office.longitude]}
+              properties={{onclick: () => onOfficeSelect?.(office)}}
+            />
+          ))}
+        </Map>
+      </YMaps>
     </Card.Root>
   );
 }

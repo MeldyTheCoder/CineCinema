@@ -18,7 +18,6 @@ app.interceptors.request.use(async (request) => {
 });
 
 app.interceptors.response.use(async (response) => {
-    console.log(response);
     if (response.status === 401) {
         logoutFx();
     }
@@ -27,4 +26,17 @@ app.interceptors.response.use(async (response) => {
     if (error.response && error.response.status === 401) {
         logoutFx();
     }
+    return error;
 })
+
+app.interceptors.response.use(
+    (response) => {
+        if (response.status >= 200 && response.status < 300) {
+            return response;
+        }
+        return Promise.reject(response);
+    },
+    (error) => {
+        return Promise.reject(error.response.detail);
+    }
+);

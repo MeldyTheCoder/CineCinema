@@ -5,6 +5,7 @@ import { app } from "../app";
 import { AxiosResponse } from "axios";
 import {pending} from 'patronum';
 import { wait } from "./timer.store";
+import { camelArray, objectToCamelCase } from "../utils/camelCase";
 
 type FilmAttachmentsRequest = {
     filmId: number;
@@ -18,14 +19,14 @@ export const $film = createStore<TFilm | null>(null);
 export const $films = createStore<TFilm[]>([]);
 export const $filmAttachments = createStore<TFilmAttachment[]>([]);
 
-export const loadFilmsEv = createEvent<undefined>();
-export const resetFilmsEv = createEvent<undefined>();
+export const loadFilmsEv = createEvent<void>();
+export const resetFilmsEv = createEvent<void>();
 
-const loadFilmsFx = createEffect<undefined, TFilm[], Error>({
+const loadFilmsFx = createEffect<void, TFilm[], Error>({
     name: 'loadFilmsFx',
     handler: async () => {
         const response = await app.get<any, AxiosResponse<TFilm[]>>('/films/');
-        return response.data;
+        return camelArray<TFilm[]>(response.data);
     }
 });
 
@@ -36,7 +37,7 @@ export const loadFilmFx = createEffect<FilmRequest, TFilm, Error>({
     handler: async ({filmId}) => {
         await wait(500);
         const response = await app.get<any, AxiosResponse<TFilm>>(`/films/${filmId}`);
-        return response.data;
+        return objectToCamelCase<TFilm>(response.data);
     }
 })
 
@@ -45,7 +46,10 @@ export const resetFilmAttachmentsEv = createEvent<null>();
 
 const loadFilmAttachmentsFx = createEffect<FilmAttachmentsRequest, TFilmAttachment[], Error>({
     name: 'loadFilmAttachmentsFx',
-    handler: ({filmId}) => filmAttachments.filter((_filmAttach) => _filmAttach.film.id === filmId),
+    handler: async ({filmId}) => {
+        const response = await app.get<TFilmAttachment[]>(`/films/${filmId}/attachments/`);
+        return camelArray<TFilmAttachment[]>(response.data);
+    },
 });
 
 $films.on(loadFilmsFx.doneData, (_, films) => films).reset(resetFilmsEv);
@@ -71,7 +75,6 @@ sample({
 })
 
 sample({
-    clock: loadFilmFx.doneData,
-    target: loadFilmAttachmentsEv,
-    fn: (film) => ({filmId: film.id} as FilmAttachmentsRequest),
+    clock: loadFilmFx,
+    target: loadFilmAttachmentsFx,
 })

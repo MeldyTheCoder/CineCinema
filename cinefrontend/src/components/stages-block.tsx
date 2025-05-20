@@ -7,10 +7,13 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
+import { getNextArrayElement, getPrevArrayElement } from "../utils/arrays";
+import { ZodSchema } from "zod";
 
 type TStageBlockProps<T, K extends keyof T = keyof T> = {
   readonly name: K;
   readonly icon: React.ReactNode;
+  readonly validator: ZodSchema;
   readonly label: (_: boolean, __: T[K]) => React.ReactNode;
   readonly children: TStagesBlockReturn<T[K]>;
 };
@@ -56,18 +59,6 @@ type TStagesBlockReturn<FieldType> = ({
   handleBlur,
 }: TStagesBlockParams<FieldType>) => TBlockSetupParams;
 
-function getNextArrayElement<T extends any>(currentItem: T, array: T[]): T {
-  const currentIndex = array.indexOf(currentItem);
-  const nextIndex = currentIndex + 1;
-  return array[nextIndex];
-}
-
-function getPrevArrayElement<T extends any>(currentItem: T, array: T[]): T {
-  const currentIndex = array.indexOf(currentItem);
-  const prevIndex = currentIndex - 1;
-  return array[prevIndex];
-}
-
 const RootContext = createContext<StagesContextType<any>>({});
 
 function Root<T>({
@@ -81,27 +72,39 @@ function Root<T>({
   );
   const [store, setStore] = useState<T>(defaultValues);
 
+  // Обработка изменения значений блока
   const handleBlockValueChange = (blockId: keyof T, value: any) => {
     setStore((prev) => ({ ...prev, [blockId]: value }));
   };
 
+  // Смена этапа формы
   const handleStageChange = (stage: keyof T) => {
     setCurrentStage(stage);
   };
 
+  // Следующий этап формы
   const handleNextStage = useCallback(() => {
-    setCurrentStage(
-      (prev: any) =>
-        getNextArrayElement<string>(prev, Object.keys(store as any)) as any
-    );
-  }, [stage, setCurrentStage]);
+    const nextStage = getNextArrayElement<string>(
+      stage as string,
+      Object.keys(store as any)
+    ) as keyof T;
+    if (!nextStage) {
+      return;
+    }
+    handleStageChange(nextStage);
+  }, [stage, store, handleStageChange]);
 
+  // Предыдущий этап формы
   const handlePrevStage = useCallback(() => {
-    setCurrentStage(
-      (prev: any) =>
-        getPrevArrayElement<string>(prev, Object.keys(store as any)) as any
-    );
-  }, [stage, setCurrentStage]);
+    const prevStage = getPrevArrayElement<string>(
+      stage as string,
+      Object.keys(store as any)
+    ) as keyof T;
+    if (!prevStage) {
+      return;
+    }
+    handleStageChange(prevStage);
+  }, [stage, store, handleStageChange]);
 
   useEffect(() => {
     onChange?.(store);
@@ -111,6 +114,21 @@ function Root<T>({
     onStageChange?.(stage);
   }, [stage]);
 
+  useEffect(() => {
+    addEventListener("keydown", (event) => {
+      switch (event.code) {
+        case "ArrowDown":
+          handleNextStage();
+          return;
+        case "ArrowUp":
+          handlePrevStage();
+          return;
+        default:
+          return;
+      }
+    });
+  }, []);
+
   return (
     <RootContext.Provider
       value={{
@@ -118,8 +136,8 @@ function Root<T>({
         stage,
         handleStageChange: (stage) => handleStageChange(stage as any),
         handleBlockValueChange: handleBlockValueChange as any,
-        handleNext: handleNextStage,
-        handlePrev: handlePrevStage,
+        handleNext: () => handleNextStage(),
+        handlePrev: () => handlePrevStage(),
         defaultValues: defaultValues as any,
       }}
     >
@@ -132,17 +150,19 @@ function Block<T extends any = any, K extends keyof T = keyof T>({
   name,
   icon,
   label,
+  validator,
   children,
 }: TStageBlockProps<T, K>): React.ReactNode {
   const {
-    handleNext,
-    stage,
-    handlePrev,
     store,
+    stage,
+    handleNext,
+    handlePrev,
     handleBlockValueChange,
     handleStageChange,
   } = useContext(RootContext);
 
+  // Состояние блока (вкл/выкл)
   const disabled = useMemo(() => {
     const prevStageName = getPrevArrayElement<K>(
       name as any,
@@ -156,8 +176,23 @@ function Block<T extends any = any, K extends keyof T = keyof T>({
     return !prevStageValue;
   }, [store, stage]);
 
+  // Активный ли блок
   const active = useMemo(() => stage === name, [stage, name]);
+
+  // Значение блока
   const value = useMemo(() => store?.[name], [name, store]);
+
+  // const stageNames = Object.keys(store).map((_s) => `${_s}`) as (keyof T)[];
+  // const prevStage = getPrevArrayElement<keyof T>(name, stageNames);
+  // const nextStage = getNextArrayElement<keyof T>(name, stageNames);
+
+  const handleNextStage = () => {
+    validator.safeParseAsync(value).then(() => handleNext?.());
+  };
+
+  const handlePrevStage = () => {
+    handlePrev?.();
+  };
 
   return (
     <Timeline.Item
@@ -180,10 +215,10 @@ function Block<T extends any = any, K extends keyof T = keyof T>({
         <Timeline.Title>{label(active, value)}</Timeline.Title>
         {active &&
           children({
-            handlePrev: handlePrev!,
-            handleNext: handleNext!,
-            active: name === stage!,
+            active: active,
             value: value,
+            handlePrev: handlePrevStage,
+            handleNext: handleNextStage,
             handleChange: (value: T[K]) =>
               handleBlockValueChange?.(name, value),
             handleBlur: () => null,

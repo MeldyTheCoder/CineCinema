@@ -1,4 +1,4 @@
-import { TFilm } from "../types";
+import { TFilm } from "../../types";
 import { Card, Image, Button, Stack, Badge, Wrap, Grid, SimpleGrid } from "@chakra-ui/react";
 import { GenresTags } from "./genres-tags";
 
@@ -16,7 +16,7 @@ export function FilmCard({ film, onClick }: FilmCardProps) {
   return (
     <Card.Root _hover={{ bg: "gray.900", scale: 1.02 }} transition="background-color 0.3s, scale 0.3s" onClick={onClick!}>
       <Image
-        src={film.cover_url}
+        src={film.coverUrl}
         aspectRatio="1x2"
         objectFit="cover"
         width="inherit"
@@ -31,7 +31,7 @@ export function FilmCard({ film, onClick }: FilmCardProps) {
           <Stack gap={2} direction="row">
             {film.genres?.length > 0 && <GenresTags genres={film.genres!} />}
 
-            <Badge background="gray.800" borderRadius="lg">{film.age_restriction}+</Badge>
+            <Badge background="gray.800" borderRadius="lg">{film.ageRestriction}+</Badge>
           </Stack>
         </Stack>
       </Card.Body>

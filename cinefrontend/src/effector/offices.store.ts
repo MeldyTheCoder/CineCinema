@@ -4,6 +4,7 @@ import { AxiosResponse } from 'axios';
 import { app } from '../app';
 import { $selectedRegion } from './regions.store';
 import { pending } from 'patronum';
+import { camelArray } from '../utils/camelCase';
 
 
 type OfficesRequest = {
@@ -21,7 +22,7 @@ export const loadOfficesFx = createEffect<OfficesRequest, TOffice[], Error>({
     name: 'loadOfficesFx',
     handler: async ({regionId}) => {
         const response = await app.get<any, AxiosResponse<TOffice[]>>(`/regions/${regionId}/offices`);
-        return response.data;
+        return camelArray<TOffice[]>(response.data);
     }
 })
 

@@ -3,13 +3,17 @@ import { TOffice } from "../types";
 import { RadioBadges, RadioBadgesProps } from "./radio-badges";
 import { FaBuilding } from "react-icons/fa";
 import { OfficesMap } from "./maps/offices-map";
+import { useUnit } from "effector-react";
+import { $offices } from "../effector/offices.store";
 
-type OfficeSelectProps = Omit<RadioBadgesProps<TOffice>, "itemRenderer">;
+type OfficeSelectProps = Omit<RadioBadgesProps<TOffice>, "itemRenderer" | "elements">;
 
-export function OfficeSelect({ elements, value, onSelect }: OfficeSelectProps) {
+export function OfficeSelect({ value, onSelect }: OfficeSelectProps) {
+  const [offices] = useUnit([$offices]);
+
   return (
     <Stack gap={5} direction="column">
-      <OfficesMap selectedOffice={value} offices={elements} />
+      <OfficesMap selectedOffice={value} offices={offices} onOfficeSelect={(office) => onSelect?.(office)}/>
       <RadioCard.Root
         orientation="vertical"
         align="center"
@@ -18,7 +22,7 @@ export function OfficeSelect({ elements, value, onSelect }: OfficeSelectProps) {
         defaultValue={`${value?.id}`}
       >
         <HStack align="stretch" wrap="wrap">
-          {elements.map((item) => (
+          {offices.map((item) => (
             <RadioCard.Item key={item.id} value={`${item.id}`} onClick={() => onSelect?.(item)}>
               <RadioCard.ItemHiddenInput />
               <RadioCard.ItemControl>

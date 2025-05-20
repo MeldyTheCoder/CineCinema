@@ -1,9 +1,10 @@
 export type TUser = {
-    first_name: string;
-    last_name: string;
-    password: string;
+    firstName: string;
+    lastName: string | null;
     id: number;
     phone: string;
+    email: string | null;
+    avatar: string;
 }
 
 export enum TAgeRestiction {
@@ -18,6 +19,7 @@ export enum TSeatType {
     STANDART = 'standart',
     VIP = 'vip',
     DISABLED = 'disabled',
+    VOID = 'void',
 }
 
 export type TGenre = {
@@ -31,19 +33,20 @@ export type TFilm = {
     rating: number;
     id: number;
     genres: TGenre[];
-    age_restriction: TAgeRestiction;
-    duration_seconds: number;
-    cover_url: string;
+    ageRestriction: TAgeRestiction;
+    durationSeconds: number;
+    coverUrl: string;
     price: number;
-    active_date_from: string;
-    active_date_to: string;
+    activeDateFrom: string;
+    activeDateTo: string;
+    director: string;
 }
 
 export type TActor = {
     id: number;
-    first_name: string;
-    last_name: string;
-    photo_url: string;
+    firstName: string;
+    lastName: string;
+    photoUrl: string;
 }
 
 export type TFilmActor = {
@@ -56,25 +59,27 @@ export type TFilmActor = {
 export type TFilmAttachment = {
     id: number;
     film: TFilm;
-    attachment_url: string;
-    mime_type: 'video' | 'photo';
+    attachmentUrl: string;
+    mimeType: 'video' | 'photo';
 }
 
 export type THall = {
     id: number;
     title: string;
-    price_factor: number;
-    seats_x: number;
-    seats_y: number;
+    priceFactor: number;
+    seatsX: number;
+    seatsY: number;
+    office: TOffice;
 }
 
 export type TSeat = {
     id: number;
     row: number;
-    seat_id: number;
+    column: number;
     hall: THall;
-    price_factor: number;
+    priceFactor: number;
     type: TSeatType;
+    isAvailable?: boolean;
 }
 
 export type TSchedule = {
@@ -82,7 +87,7 @@ export type TSchedule = {
     hall: THall;
     time: number;
     film: TFilm;
-    day_id: number;
+    dayId: number;
     year: number;
 }
 
@@ -90,18 +95,21 @@ export type TOrder = {
     id: number;
     schedule: TSchedule;
     seat: TSeat;
-    date_created: string;
-    total_price: number;
+    dateCreated: string;
+    totalPrice: number;
     user: TUser;
+    film: TFilm;
+    status: string | OrderStatuses
+    price: number;
 }
 
 export type TAnnounce = {
     id: number;
-    cover_url: string;
+    coverUrl: string;
     title: string;
     text: string;
-    date_closes: string;
-    date_created: string;
+    dateCloses: string;
+    dateCreated: string;
     film: TFilm;
 }
 
@@ -119,4 +127,40 @@ export type TOffice = {
     longitude: number;
     latitude: number;
     active: boolean;
+    title: string;
+}
+
+export enum BonusLogTypes {
+    DEPOSIT = 'deposit',
+    WITHDRAWAL = 'withdrawal'
+}
+
+export type TBonusLog = {
+    id: number;
+    order: TOrder;
+    bonuses: number;
+    type: `${BonusLogTypes}` | BonusLogTypes;
+    user: TUser;
+}
+
+export type TLevelInfo = {
+    level: number;
+    currentXp: number;
+    nextLevelXp: number;
+    progress: number;
+}
+
+export type TBonusResponse = {
+    levelInfo: TLevelInfo;
+    logs: TBonusLog[];
+    currentBonuses: number;
+}
+
+export enum OrderStatuses {
+    NOT_PAID = 'not_paid',
+    PAID = 'paid',
+    COMPLETE = 'complete',
+    POSTPONED = 'postponed',
+    CANCELED = 'canceled',
+    REFUND = 'refund',
 }
