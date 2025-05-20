@@ -1,2 +1,7 @@
 backend/venv
+backend/__pycache__
 cinefrontend/node_modules
+documents/venv
+documents/__pycache__
+sms/venv
+sms/__pycache__
