@@ -1,11 +1,14 @@
+import io
+
 import fastapi
 import uvicorn
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import StreamingResponse
 
 import exceptions
 import models
 import settings
-from routes import films, halls, schedule, users, regions, actors
+from routes import actors, films, halls, orders, regions, schedule, users, bonuses
 
 app = fastapi.FastAPI(
     title="CineVision Backend",
@@ -23,7 +26,6 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def on_startup() -> None:
-    redis_host, redis_port = settings.REDIS_URL.split(":")
     if not models.database.is_connected:
         await models.database.connect()
 
@@ -43,6 +45,20 @@ async def handle_parse_error(
         content={"message": f"Ошибка валидации формы: {exc}"},
     )
 
+@app.get('/media/{file_path:path}/', name="Вывод media-файлов")
+async def get_media(file_path: str):
+    file_path = settings.MEDIA_ROOT / file_path
+
+    if not file_path.is_file() or not file_path.exists():
+        raise fastapi.HTTPException(
+            status_code=404,
+            detail="Файл не найден.",
+        )
+
+    with open(file_path, 'rb') as file:
+        image_stream = io.BytesIO(file.read())
+
+    return StreamingResponse(content=image_stream, media_type="image")
 
 app.include_router(users.router)
 app.include_router(schedule.router)
@@ -50,6 +66,8 @@ app.include_router(halls.router)
 app.include_router(films.router)
 app.include_router(regions.router)
 app.include_router(actors.router)
+app.include_router(orders.router)
+app.include_router(bonuses.router)
 
 if __name__ == "__main__":
     uvicorn.run(

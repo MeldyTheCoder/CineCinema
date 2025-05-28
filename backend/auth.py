@@ -18,11 +18,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token")
 
-
-async def get_user(phone: str) -> models.User | None:
-    return await models.User.objects.get_or_none(phone=phone)
-
-
 def create_access_token(
     data: dict,
     expires_delta: timedelta | None = None,
@@ -60,7 +55,7 @@ async def get_current_user(
 ) -> models.User:
     phone = check_user_auth(token)
 
-    user = await get_user(phone=phone)
+    user = await models.User.objects.get_or_none(phone=phone)
     if user is None:
         raise exceptions.INCORRECT_LOGIN_DATA_EXCEPTION
 

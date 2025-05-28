@@ -60,7 +60,7 @@ const MessagesContainer = chakra("div", {
     overflowY: "auto",
     justifySelf: "center",
     width: "85%",
-  }
+  },
 });
 
 const MessageContainer = chakra(
@@ -70,7 +70,7 @@ const MessageContainer = chakra(
       fontSize: "18px",
       padding: "5px 15px",
       borderRadius: "15px",
-      maxWidth: '75%',
+      maxWidth: "75%",
     },
   },
   {
@@ -125,24 +125,30 @@ function Messages({ messages }: MessagesProps) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView();
-  }, [bottomRef.current])
+  }, [bottomRef.current]);
 
   return (
     <MessagesContainer>
-      <Flex direction="column" gap={2} width="100%">
+      <Flex direction="column" gap={7} width="100%">
         {Object.entries(groupedMessages).map(([date, messages]) => (
-          <>
-            <Separator marginTop="2rem" />
-            <Text textAlign="center">{date}</Text>
-            {messages.map((message) => (
-              <Message
-                isMine={message.isMine}
-                text={message.text}
-                dateTime={message.dateTime}
-              />
-            ))}
+          <Flex direction="column" gap={5}>
+            <Flex direction="column" gap={2}>
+              <Separator />
+              <Text textAlign="center" color="gray.400">
+                {date}
+              </Text>
+            </Flex>
+            <Flex direction="column" gap={2}>
+              {messages.map((message) => (
+                <Message
+                  isMine={message.isMine}
+                  text={message.text}
+                  dateTime={message.dateTime}
+                />
+              ))}
+            </Flex>
             <div ref={bottomRef} />
-          </>
+          </Flex>
         ))}
       </Flex>
     </MessagesContainer>
@@ -209,7 +215,12 @@ export function Support() {
               borderLeftRadius="15px"
               size="lg"
             />
-            <Button bg="bg.subtle" variant="outline" borderRightRadius="15px" size="lg">
+            <Button
+              bg="bg.subtle"
+              variant="outline"
+              borderRightRadius="15px"
+              size="lg"
+            >
               Отправить
             </Button>
           </Group>

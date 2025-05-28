@@ -5,9 +5,10 @@ import {
   $seats,
   loadScheduleSeatsFx,
 } from "../effector/schedule.store";
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { TSeat, TSeatType } from "../types";
 import { CinemaScreen } from "./cinema-screen";
+import { FaCheck } from "react-icons/fa";
 
 const SeatsContainer = chakra(
   Grid,
@@ -45,6 +46,7 @@ export const SeatBox = chakra("div", {
 type SeatProps = {
   readonly seat: TSeat;
   readonly index: number;
+  readonly selected?: boolean;
 };
 
 export function SeatBlock({ type }: { readonly type: TSeat["type"] }) {
@@ -60,34 +62,56 @@ export function SeatBlock({ type }: { readonly type: TSeat["type"] }) {
   }
 }
 
-export function Seat({ seat, index }: SeatProps) {
+export function Seat({ seat, index, selected }: SeatProps) {
   const seatType = seat.isAvailable === false ? TSeatType.DISABLED : seat.type;
+  const cellContent = selected ? <FaCheck /> : index.toString();
 
-  switch (seatType) {
-    case TSeatType.VOID:
-      return <SeatCell visibility="hidden">{index}</SeatCell>;
-    case TSeatType.DISABLED:
-      return (
-        <SeatCell disabled colorPalette="red">
-          {index}
-        </SeatCell>
-      );
-    case TSeatType.STANDART:
-      return <SeatCell>{index}</SeatCell>;
-    case TSeatType.VIP:
-      return <SeatCell colorPalette="yellow">{index}</SeatCell>;
-    default:
-      return null;
-  }
+  const seatProps = useMemo(() => {
+    switch (seatType) {
+      case TSeatType.VOID:
+        return {
+          visibility: 'hidden',
+          children: cellContent,
+        }
+      case TSeatType.DISABLED:
+        return {
+          disabled: true,
+          colorPalette: 'red',
+          children: cellContent,
+        }
+      case TSeatType.STANDART:
+        return {
+          colorPalette: 'gray',
+          children: cellContent,
+        }
+      case TSeatType.VIP:
+        return {
+          colorPalette: 'yellow',
+          children: cellContent,
+        }
+      default:
+        return null;
+    }
+  }, [seat, selected]);
+
+  return (
+    <SeatCell {...seatProps} />
+  )
+  
 }
 
 type SeatsGridProps = {
   readonly seats: TSeat[];
+  readonly selected?: TSeat[];
   readonly loading?: boolean;
   readonly onSeatSelect: (_: TSeat) => void;
 };
 
-export function SeatsGrid({ seats, loading, onSeatSelect }: SeatsGridProps) {
+export function SeatsGrid({ seats, selected, loading, onSeatSelect }: SeatsGridProps) {
+  const isSelected = useCallback<Function<boolean>>((seat: TSeat) => {
+    return !!selected?.find((seat_) => seat.id === seat_.id)
+  }, [selected]);
+
   return loading ? (
     <Spinner />
   ) : (
@@ -102,7 +126,7 @@ export function SeatsGrid({ seats, loading, onSeatSelect }: SeatsGridProps) {
               gridRow={seat.row}
               onClick={() => onSeatSelect?.(seat)}
             >
-              <Seat seat={seat} index={index + 1} />
+              <Seat seat={seat} index={index + 1} selected={isSelected(seat)} />
             </GridItem>
           ))}
       </SeatsContainer>

@@ -13,7 +13,6 @@ import { ProfileSettings } from "./pages/profile-pages/settings";
 import { ProfilePurchases } from "./pages/profile-pages/purchases";
 import { ProfileBonuses } from "./pages/profile-pages/bonuses";
 import { Support } from "./pages/profile-pages/support";
-import { CreateOrder } from "./pages/create-order";
 import { checkIsAdultEv } from "./effector/age.store";
 import { FilmNew } from "./pages/film-new";
 

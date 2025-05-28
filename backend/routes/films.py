@@ -40,11 +40,19 @@ async def get_films():
 
 @router.get('/{film_id}/', name="Вывод фильма по ID")
 async def get_film(film_id: int):
-    film = await models.Film.objects.select_related("genres").get_or_none(id=film_id)
+    film = await models.Film.objects.select_related(["genres"]).get_or_none(id=film_id)
     if not film:
         raise exceptions.FILM_NOT_FOUND
 
     return film
+
+@router.get('/{film_id}/attachments/', name="Вывод списка изображений фильма")
+async def get_film_attachments(film_id: int):
+    film = await models.Film.objects.select_related(["genres"]).get_or_none(id=film_id)
+    if not film:
+        raise exceptions.FILM_NOT_FOUND
+
+    return await film.attachments.all()
 
 @router.get(
     "/search/",

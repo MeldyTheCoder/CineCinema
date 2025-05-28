@@ -62,3 +62,18 @@ SCHEDULE_NOT_FOUND = fastapi.HTTPException(
     detail="Запрашиваемое Вами расписание не найден!",
     status_code=404,
 )
+
+ORDER_NOT_FOUND = fastapi.HTTPException(
+    detail="Запрашиваемый Вами заказ не найден!",
+    status_code=404,
+)
+
+SEAT_NOT_FOUND = fastapi.HTTPException(
+    detail="Запрашиваемое Вами место в зале не найдено.",
+    status_code=404,
+)
+
+SEAT_UNAVAILABLE = fastapi.HTTPException(
+    detail="Данное место недоступно для бронирования.",
+    status_code=400,
+)

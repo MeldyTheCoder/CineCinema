@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Header } from "../components/header";
 import { $film, loadFilmEv, $filmsLoading } from "../effector/films.store";
 import { $actorsLoading, $filmActors } from "../effector/actors.store";
@@ -26,16 +26,20 @@ import {
   Center,
   Spinner,
 } from "@chakra-ui/react";
-import { TFilmAttachment, TSchedule } from "../types";
+import { TFilmAttachment, TSchedule, TSeat } from "../types";
 import { GenresTags } from "../components/films/genres-tags";
 import { dayjs, formatDuration } from "../utils/dates";
-import {ActorsListEmptyState, ActorsList} from '../components/films/actors-list';
+import {
+  ActorsListEmptyState,
+  ActorsList,
+} from "../components/films/actors-list";
 import { ScheduleNew } from "../components/films/schedule-new";
 import { loadScheduleEv } from "../effector/schedule.store";
 import { $selectedRegion } from "../effector/regions.store";
 import { AgeVerificationModal } from "../components/films/age-verification-modal";
 import { AttachmentsList } from "../components/films/attachments-list";
-import { SeatSelectModal } from "../components/films/seat-select-modal";
+import { MakeOrderModal } from "../components/films/make-order-modal";
+import { schedule } from "../test";
 
 const FilmTrailerContainer = chakra("div", {
   base: {
@@ -77,7 +81,9 @@ function FilmTrailer({ trailer }: FilmTrailerProps) {
 
 export function FilmNew() {
   const navigate = useNavigate();
-  const [selectedSchedule, setSelectedSchedule] = useState<TSchedule | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<TSchedule | null>(
+    null
+  );
   const { filmId } = useParams();
   const [
     region,
@@ -110,18 +116,30 @@ export function FilmNew() {
     setSelectedSchedule(schedule);
   };
 
+  const handleSeatSelect = useCallback(
+    (seat: TSeat) => {
+      if (!selectedSchedule) {
+        return;
+      }
+      return navigate(
+        `/order?scheduleId=${selectedSchedule.id}&seatId=${seat.id}`
+      );
+    },
+    [selectedSchedule]
+  );
+
   useEffect(() => {
     if (!filmId) {
       navigate("/");
       return;
-    }   
+    }
 
     if (!region) {
-        return;
+      return;
     }
 
     loadFilm({ filmId: +filmId });
-    loadScheduleEv({regionId: region?.id, filmId: +filmId!});
+    loadScheduleEv({ regionId: region?.id, filmId: +filmId! });
   }, [region, filmId]);
 
   return (
@@ -166,7 +184,8 @@ export function FilmNew() {
                     </Group>
                   </Skeleton>
                 </Flex>
-                <DataList.Root flexDirection="row" flexWrap="wrap" gapX={10}>
+
+                <DataList.Root flexDirection="row" flexWrap="wrap" gapX={10} size="lg">
                   <DataList.Item key="1">
                     <DataList.ItemLabel>Продолжительность</DataList.ItemLabel>
                     <DataList.ItemValue>
@@ -189,7 +208,7 @@ export function FilmNew() {
                     <DataList.ItemLabel>Режисер</DataList.ItemLabel>
                     <DataList.ItemValue>
                       <Skeleton loading={filmLoading} minWidth={50}>
-                        {film?.director || ' - '}
+                        {film?.director || " - "}
                       </Skeleton>
                     </DataList.ItemValue>
                   </DataList.Item>
@@ -222,7 +241,7 @@ export function FilmNew() {
                 </DataList.Root>
               </Flex>
             </HStack>
-            
+
             <ScheduleNew onSelect={handleScheduleSelect} />
 
             <Tabs.Root defaultValue="0" size="lg">
@@ -276,25 +295,26 @@ export function FilmNew() {
               </Tabs.Content>
               <Tabs.Content value="2">
                 {actorsLoading ? (
-                    <Center>
-                      <Spinner size="lg" />
-                    </Center>
-                  ) : !actors.length ? (
-                    <ActorsListEmptyState />
-                  ) : (
-                    <ActorsList filmActors={actors} />
-                  )}
+                  <Center>
+                    <Spinner size="lg" />
+                  </Center>
+                ) : !actors.length ? (
+                  <ActorsListEmptyState />
+                ) : (
+                  <ActorsList filmActors={actors} />
+                )}
               </Tabs.Content>
             </Tabs.Root>
           </Stack>
         </Container>
       </PageBody>
-      
-      {!!film && (
-         <AgeVerificationModal film={film} />
-      )}
 
-      <SeatSelectModal schedule={selectedSchedule} onClose={() => setSelectedSchedule(null)}/>
+      {!!film && <AgeVerificationModal film={film} />}
+
+      <MakeOrderModal
+        schedule={selectedSchedule!}
+        onClose={() => setSelectedSchedule(null)}
+      />
     </>
   );
 }

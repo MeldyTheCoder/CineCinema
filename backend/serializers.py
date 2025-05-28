@@ -4,13 +4,24 @@ import datetime  # noqa: TC003
 import re
 
 import pydantic
-import models
+from fastapi_camelcase import CamelModel
+
 import exceptions
+import models
 
 
-class BaseModel(pydantic.BaseModel):
+def generate_pydantic_camel_alias(alias: str) -> str:
+    return alias[0].lower + alias[1:].replace("_", "")
+
+class BaseModel(
+    CamelModel
+):
     """Базовая модель pydantic."""
 
+    class Config:  # noqa: D106
+        alias_generator = generate_pydantic_camel_alias  # snake_case → camelCase
+        from_attributes = True
+        populate_by_name = True  # Разрешает использовать как исходные имена, так и алиасы
 
 class SendSmsRequest(BaseModel):
     """Модель валидации формы отправки смс на авторизацию."""
@@ -45,19 +56,24 @@ class ValidateSmsRequest(BaseModel):
 
         return code
 
+
 class RegionsRequest(BaseModel):
-    """Модель валидаци формы запроса на все доступные регионы"""
+    """Модель валидаци формы запроса на все доступные регионы."""
+
 
 class OfficesRequest(BaseModel):
-    """Модель валидации формы запроса на все доступные офисы"""
+    """Модель валидации формы запроса на все доступные офисы."""
 
-    region_id: int | None = pydantic.Field(alias='regionId', default=None, title="ID региона")
+    region_id: int | None = pydantic.Field(
+        alias="regionId", default=None, title="ID региона"
+    )
+
 
 class ScheduleRequest(BaseModel):
     """Модель валидации формы запроса на расписание фильмов."""
 
-    hall_id: int | None = pydantic.Field(alias="hallId", default=None, title="ID зала")
-    film_id: int | None = pydantic.Field(
+    # hall_id: int | None = pydantic.Field(alias="hallId", default=None, title="ID зала")
+    film_id: int = pydantic.Field(
         alias="filmId",
         default=None,
         title="ID фильма",
@@ -72,29 +88,32 @@ class ScheduleRequest(BaseModel):
         default=None,
         title="Максимальная дата расписания",
     )
+    #
+    # office_id: int = pydantic.Field(alias="officeId", title="ID офиса")
+    region_id: int = pydantic.Field(
+        alias="regionId",
+        title="ID региона",
+    )
+
+
+class HallsRequest(BaseModel):
+    """Модель валидации формы запроса списка залов."""
 
     office_id: int = pydantic.Field(alias="officeId", title="ID офиса")
 
-class HallsRequest(BaseModel):
-    """Модель валидации формы запроса списка залов"""
-
-    office_id: int = pydantic.Field(
-        alias="officeId", title="ID офиса"
-    )
 
 class HallsForFilmRequest(BaseModel):
     """Модель валидации формы запроса списка залов для фильма."""
 
-    office_id: int = pydantic.Field(
-        alias="officeId", title="ID офиса"
-    )
+    office_id: int = pydantic.Field(alias="officeId", title="ID офиса")
 
 
 class FimlsSearchRequest(BaseModel):
     """Модель валидации формы запроса списка фильмов."""
 
     age_restriction: models.AgeRestriction | None = pydantic.Field(
-        alias="ageRestiction", default=models.AgeRestriction.ZERO_PLUS,
+        alias="ageRestiction",
+        default=models.AgeRestriction.ZERO_PLUS,
     )
 
     genres_id: list[int] | None = pydantic.Field(
@@ -120,6 +139,73 @@ class FimlsSearchRequest(BaseModel):
     office_id: int | None = pydantic.Field(
         alias="officeId",
         default=None,
-        title="ID офиса"
+        title="ID офиса",
+    )
+
+class EditProfileRequest(BaseModel):
+    """Модель редактирования профиля авторизованного пользователя."""
+
+    first_name: str = pydantic.Field(
+        alias="firstName",
+        title="Имя",
+    )
+
+    last_name: str | None = pydantic.Field(
+        alias="lastName",
+        default=None,
+        title="Фамилия",
+    )
+
+    avatar: str | None = pydantic.Field(
+        alias="avatar",
+        default=None,
+        title="Изображение профиля",
+    )
+
+    email: str | None = pydantic.Field(
+        alias="email",
+        default=None,
+        title="E-mail",
+    )
+
+class UserOrdersRequest(BaseModel):
+    page: int | None = pydantic.Field(
+        alias="page",
+        default=None,
+        title="Страница",
+    )
+
+    search: str | None = pydantic.Field(
+        alias="search",
+        default=None,
+        title="Строка поиска",
+    )
+
+    status: models.OrderStatuses | None = pydantic.Field(
+        alias="status",
+        default=None,
+        title="Статус заказа",
+    )
+
+class AddLocalOrderRequest(BaseModel):
+    order_id: int = pydantic.Field(
+        alias='orderId',
+        title="Номер заказа",
+    )
+
+    price: int | float = pydantic.Field(
+        alias="price",
+        title="Цена заказа",
+    )
+
+class CreateOrderRequest(BaseModel):
+    seat_id: int = pydantic.Field(
+        alias="seatId",
+        title="ID места",
+    )
+
+    schedule_id: int = pydantic.Field(
+        alias="scheduleId",
+        title="ID расписания",
     )
 

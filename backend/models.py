@@ -1,17 +1,20 @@
 import datetime
 import enum
-from email.policy import default
-from sys import orig_argv
 
 import databases
+import fastapi
 import ormar
 import sqlalchemy
 import sqlalchemy_utils
-
+import fn_utils as dates
+import exceptions
 import settings
 
 if not sqlalchemy_utils.database_exists(settings.DATABASE_URL):
     sqlalchemy_utils.create_database(settings.DATABASE_URL)
+
+
+BONUS_LOG_PRICE_PERCENT = 5
 
 engine = sqlalchemy.create_engine(settings.DATABASE_URL)
 database = databases.Database(settings.DATABASE_URL)
@@ -22,7 +25,6 @@ ormar_config = ormar.OrmarConfig(
     engine=engine,
     database=database,
 )
-
 
 class AgeRestriction(enum.Enum):
     ZERO_PLUS = 0
@@ -36,44 +38,42 @@ class SeatType(enum.Enum):
     STANDART = "standart"
     VIP = "vip"
     DISABLED = "disabled"
+    VOID = 'void'
 
 
 class MimeType(enum.Enum):
     VIDEO = "video"
     PHOTO = "photo"
 
+class OrderStatuses(enum.Enum):
+    NOT_PAID = 'not_paid'
+    PAID = 'paid'
+    COMPLETE = 'complete'
+    POSTPONED = 'postponed'
+    CANCELED = 'canceled'
+    REFUND = 'refund'
+
+class BonusLogType(enum.Enum):
+    DEPOSIT = 'deposit'
+    WITHDRAWAL = 'withdrawal'
+
 
 def get_current_time() -> datetime.datetime:
     return datetime.datetime.now(tz=settings.TIMEZONE)
 
-def to_camel_case(snake_str: str) -> str:
-    parts = snake_str.split('_')
-    return parts[0] + ''.join(word.capitalize() for word in parts[1:])
+
+def to_camel_case(alias: str) -> str:
+    return alias[0].lower() + alias[1:].replace("_", "")
+
 
 class BaseOrmarModel(ormar.Model):
     ormar_config = ormar_config.copy(
         abstract=True,
     )
 
-    def dict(self, **kwargs):
-        data = super().dict(**kwargs)
-        return {to_camel_case(key): value for key, value in data.items()}
-
-class CamelQuerySet(ormar.QuerySet):
-    async def all_camel(self, *args, **kwargs):
-        dataset: list[ormar.Model] = await super().all(*args, **kwargs)
-        return [self._to_camel(instance) for instance in dataset]
-
-    @staticmethod
-    def _to_camel(instance: ormar.Model):
-        """Преобразует данные модели в camelCase."""
-        data = instance.dict()
-        return {to_camel_case(key): value for key, value in data.items()}
-
 class User(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="users",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(
@@ -86,11 +86,13 @@ class User(BaseOrmarModel):
     first_name = ormar.String(max_length=50, nullable=False)
     last_name = ormar.String(max_length=50, nullable=False)
     phone = ormar.String(max_length=20, nullable=False)
+    email = ormar.String(nullable=True, max_length=120)
+    avatar = ormar.Text(nullable=True)
+
 
 class Region(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="regions",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(
@@ -122,14 +124,18 @@ class Region(BaseOrmarModel):
 class Office(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="offices",
-        constraints=[ormar.UniqueColumns('address', 'region')],
-        queryset_class=CamelQuerySet,
+        constraints=[ormar.UniqueColumns("address", "region")],
     )
 
     id = ormar.Integer(
         minimum=1,
         primary_key=True,
         autoincrement=True,
+        nullable=False,
+    )
+
+    title = ormar.String(
+        max_length=100,
         nullable=False,
     )
 
@@ -162,10 +168,10 @@ class Office(BaseOrmarModel):
         nullable=False,
     )
 
+
 class Genre(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="genres",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(
@@ -185,7 +191,6 @@ class Genre(BaseOrmarModel):
 class Film(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="films",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(minimum=1, primary_key=True, autoincrement=True, nullable=False)
@@ -203,6 +208,7 @@ class Film(BaseOrmarModel):
         max_digits=4,
         decimal_places=2,
     )
+    director = ormar.String(max_length=120, nullable=False)
     age_restriction = ormar.Enum(enum_class=AgeRestriction, nullable=False)
     duration_seconds = ormar.Integer(minimum=1, nullable=False)
     cover_url = ormar.String(max_length=255, nullable=False)
@@ -214,7 +220,6 @@ class Film(BaseOrmarModel):
 class FilmAttachment(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="attachments",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(
@@ -236,7 +241,6 @@ class FilmAttachment(BaseOrmarModel):
 class Hall(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="halls",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(
@@ -290,7 +294,6 @@ class Hall(BaseOrmarModel):
 class Seat(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="seats",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(
@@ -313,6 +316,7 @@ class Seat(BaseOrmarModel):
         ondelete=ormar.ReferentialAction.CASCADE,
         onupdate=ormar.ReferentialAction.CASCADE,
         nullable=False,
+        related_name='seats',
     )
 
     price_factor = ormar.Decimal(
@@ -330,7 +334,6 @@ class Seat(BaseOrmarModel):
 class Schedule(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="schedule",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(
@@ -350,7 +353,7 @@ class Schedule(BaseOrmarModel):
 
     time = ormar.Integer(
         minimum=1,
-        maximum=1440,
+        maximum=86_400,
         nullable=False,
     )
 
@@ -377,7 +380,6 @@ class Schedule(BaseOrmarModel):
 class Order(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="orders",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(
@@ -409,6 +411,7 @@ class Order(BaseOrmarModel):
 
     user = ormar.ForeignKey(
         to=User,
+        nullable=True,
         ondelete=ormar.ReferentialAction.CASCADE,
         onupdate=ormar.ReferentialAction.CASCADE,
     )
@@ -420,11 +423,18 @@ class Order(BaseOrmarModel):
         on_update=ormar.ReferentialAction.CASCADE,
     )
 
+    status = ormar.Enum(
+        enum_class=OrderStatuses,
+        default=OrderStatuses.NOT_PAID,
+        nullable=False,
+    )
+
+    price = ormar.Integer(minimum=0, nullable=False, default=0)
+
 
 class Announcements(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="announces",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(
@@ -465,10 +475,10 @@ class Announcements(BaseOrmarModel):
         timezone=True,
     )
 
+
 class Actor(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="actors",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(
@@ -496,7 +506,6 @@ class Actor(BaseOrmarModel):
 class FilmActor(BaseOrmarModel):
     ormar_config = ormar_config.copy(
         tablename="filmactor",
-        queryset_class=CamelQuerySet,
     )
 
     id = ormar.Integer(
@@ -510,7 +519,7 @@ class FilmActor(BaseOrmarModel):
         to=Actor,
         on_delete=ormar.ReferentialAction.CASCADE,
         on_update=ormar.ReferentialAction.CASCADE,
-        related_name="roles",
+        related_name="roles"
     )
 
     film = ormar.ForeignKey(
@@ -524,6 +533,142 @@ class FilmActor(BaseOrmarModel):
         max_length=50,
         nullable=False,
     )
+
+
+class BonusLogs(BaseOrmarModel):
+    ormar_config = ormar_config.copy(
+        tablename="bonus_logs",
+    )
+
+    id = ormar.Integer(
+        minimum=1,
+        primary_key=True,
+        autoincrement=True,
+        nullable=False,
+    )
+
+    order = ormar.ForeignKey(
+        to=Order,
+        nullable=False,
+        on_delete=ormar.ReferentialAction.SET_NULL,
+        on_update=ormar.ReferentialAction.CASCADE,
+    )
+
+    bonuses = ormar.Integer(
+        minimum=1,
+        nullable=False,
+    )
+
+    type = ormar.Enum(
+        enum_class=BonusLogType,
+        default=BonusLogType.DEPOSIT
+    )
+
+    user = ormar.ForeignKey(
+        to=User,
+        nullable=False,
+        on_delete=ormar.ReferentialAction.CASCADE,
+        on_update=ormar.ReferentialAction.CASCADE,
+    )
+
+    date_created = ormar.DateTime(
+        default=get_current_time,
+    )
+
+@database.transaction()
+async def create_order(schedule: Schedule, seat: Seat, user: User):
+    """
+    Создание заказа на фильм, зал, время и место.
+    """
+    seat_unavailable = await Order.object.filter(
+        seat__id=seat.id,
+        schedule__id=schedule.id,
+        status__not__in=[
+            OrderStatuses.CANCELED,
+            OrderStatuses.REFUND,
+            OrderStatuses.COMPLETE,
+        ]
+    ).exists()
+
+    if seat_unavailable:
+        raise exceptions.SEAT_UNAVAILABLE
+
+    total_price = schedule.film.price * 100 * schedule.hall.price_factor * seat.price_factor
+    order = await Order.objects.create(
+        schedule=schedule,
+        seat=seat,
+        user=user,
+        office=schedule.hall.office,
+        status=OrderStatuses.NOT_PAID,
+        price=total_price,
+    )
+
+    await BonusLogs.objects.create(
+        order=order,
+        type=BonusLogType.DEPOSIT,
+        bonuses=total_price // 100 * BONUS_LOG_PRICE_PERCENT,
+        user=user,
+    )
+
+    return order
+
+@database.transaction()
+async def add_local_order(order_id: int, price: int, user: User):
+    """
+    Добавление офлайн-заказа в систему - обновление списка заказа пользователей
+    """
+    order = await Order.objects.get_or_none(
+        id=order_id,
+        price=price,
+        user__isnull=True,
+    )
+    if not order:
+        raise exceptions.ORDER_NOT_FOUND
+
+    await order.update(
+        user=user,
+    )
+
+    await BonusLogs.objects.create(
+        order=order,
+        user=user,
+        bonuses=price // 100 * BONUS_LOG_PRICE_PERCENT,
+        type=BonusLogType.DEPOSIT,
+    )
+
+    return order
+
+
+async def get_active_schedule_by_id(schedule_id: int):
+    """
+    Получить активное расписание по его ID
+    """
+    current_date = dates.get_now()
+    day_id = dates.day_of_year(current_date)
+    year = current_date.year
+    time = dates.seconds_since_start_of_day(current_date)
+
+    schedule = await Schedule.objects.select_related(
+        ['hall', 'film', 'hall__office', 'hall__office__region', 'film__genres']).get_or_none(
+        ormar.or_(
+            ormar.and_(
+                day_id__gt=day_id,
+                year__gte=year,
+            ),
+            ormar.and_(
+                day_id=day_id,
+                year=year,
+                time__gt=time,
+            )
+        ),
+        hall__active=True,
+        id=schedule_id,
+    )
+    if not schedule:
+        raise exceptions.SCHEDULE_NOT_FOUND
+
+    return schedule
+
 
 if __name__ != "__main__":
     metadata.create_all(bind=engine)

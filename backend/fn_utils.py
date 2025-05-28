@@ -26,3 +26,10 @@ def day_of_year(date: datetime) -> int:
 
 def seconds_since_start_of_day(date: datetime) -> int:
     return date.hour * 3600 + date.minute * 60 + date.second
+
+
+def create_datetime(day_id: int, year: int, time_seconds: int) -> datetime:
+    base_date = datetime(year, 1, 1)
+    target_date = base_date + timedelta(days=day_id - 1)
+
+    return (target_date + timedelta(seconds=time_seconds)).replace(tzinfo=settings.TIMEZONE)

@@ -23,7 +23,7 @@ HallResponseModel = models.Hall.get_pydantic(
 )
 
 
-@router.get("/{office_id}", name="Вывод всех залов офиса", response_model=HallResponseModel)
+@router.get("/{office_id}", name="Вывод всех залов офиса")
 async def get_halls(office_id: int) -> list[models.Hall]:
     office = await models.Office.objects.get_or_none(id=office_id)
     if not office:
@@ -35,7 +35,6 @@ async def get_halls(office_id: int) -> list[models.Hall]:
 @router.get(
     "/for-film/{film_id}",
     name="Вывод всех ближайших по расписанию залов, в которых идет указанный фильм",
-    response_model=list[HallResponseModel],
     deprecated=True,
 )
 async def get_halls_for_film(
@@ -62,3 +61,15 @@ async def get_halls_for_film(
         schedule__time__gt=time,
         office__id=office.id,
     ).all()
+
+
+@router.get('/{hall_id}/seats', name="Вывод доступных мест в зале.", deprecated=True)
+async def get_hall_seats(hall_id: int):
+    hall = await models.Hall.objects.get_or_none(
+        id=hall_id
+    )
+
+    if not hall:
+        raise exceptions.HALL_NOT_FOUND
+
+    return await hall.seats.all()

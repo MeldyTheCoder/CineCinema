@@ -18,6 +18,15 @@ class OrderStatuses(enum.Enum):
     CANCELED = 'canceled'
     REFUND = 'refund'
 
+class Film(Model):
+    id: int = pydantic.Field(
+        title="ID"
+    )
+
+    title: str = pydantic.Field(
+        title="Название фильма"
+    )
+
 class Hall(Model):
     id: int = pydantic.Field(
         title="ID"
