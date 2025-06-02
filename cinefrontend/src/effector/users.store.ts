@@ -10,6 +10,8 @@ export type TValidatePhoneRequest = {
   code: string;
 };
 
+type TRegisterSmsRequest = TValidatePhoneRequest & Pick<TUser, "firstName">;
+
 type TSendSmsRequest = {
   phone?: string;
 };
@@ -50,11 +52,27 @@ export const $tokenData = createStore<TokenStorage>({
   tokenType: "Bearer",
 });
 
-export const sendCodeEv = createEvent<TSendSmsRequest>();
-export const sendCodeFx = createEffect<TSendSmsRequest, boolean, Error>({
+export const sendAuthCodeEv = createEvent<TSendSmsRequest>();
+export const sendAuthCodeFx = createEffect<TSendSmsRequest, boolean, Error>({
   name: "sendCodeFx",
   handler: async ({ phone }) => {
-    const { status } = await app.post("/users/send-sms/", {
+    const { status } = await app.post("/users/auth/send-sms/", {
+      phone,
+    });
+
+    return status === 200;
+  },
+});
+
+export const sendRegistrationCodeEv = createEvent<TSendSmsRequest>();
+export const sendRegistrationCodeFx = createEffect<
+  TSendSmsRequest,
+  boolean,
+  Error
+>({
+  name: "sendCodeFx",
+  handler: async ({ phone }) => {
+    const { status } = await app.post("/users/registration/send-sms/", {
       phone,
     });
 
@@ -89,10 +107,10 @@ export const logoutFx = createEffect<void, TokenStorage, Error>({
   handler: async () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("tokenType");
-    window.location.href = '/';
     return { accessToken: "", tokenType: "" } as TokenStorage;
   },
 });
+
 export const loginEv = createEvent<TValidatePhoneRequest>();
 export const loginFx = createEffect<TValidatePhoneRequest, TokenStorage, Error>(
   {
@@ -101,7 +119,7 @@ export const loginFx = createEffect<TValidatePhoneRequest, TokenStorage, Error>(
       const response = await app.post<
         TValidatePhoneRequest,
         AxiosResponse<TValidatePhoneResponse>
-      >("/users/validate-sms/", {
+      >("/users/auth/validate-sms/", {
         phone,
         code,
       });
@@ -115,6 +133,27 @@ export const loginFx = createEffect<TValidatePhoneRequest, TokenStorage, Error>(
   }
 );
 
+export const registerSmsEv = createEvent<TRegisterSmsRequest>();
+export const registerSmsFx = createEffect<TRegisterSmsRequest, TokenStorage, Error>({
+  name: "registerSmsFx",
+  handler: async ({ phone, code, firstName }) => {
+    const response = await app.post<
+      TRegisterSmsRequest,
+      AxiosResponse<TValidatePhoneResponse>
+    >("/users/registration/validate-sms/", {
+      phone,
+      code,
+      firstName,
+    });
+
+    if (response.status === 200) {
+      return await authenticateFx(response.data);
+    }
+
+    throw new Error("Не удалость зарегистрировать аккаунт.");
+  },
+});
+
 export const editProfileFx = createEffect<TEditProfileRequest, TUser, Error>({
   name: "editProfileFx",
   handler: async (data) => {
@@ -126,28 +165,33 @@ export const editProfileFx = createEffect<TEditProfileRequest, TUser, Error>({
   },
 });
 
-export const changeAvatarFx = createEffect<TChangeAvatarRequest, string, Error>({
-  name: "changeAvatarFx",
-  handler: async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    const response = await app.post<any>("/users/avatar/", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return response.data;
-  },
-});
+export const changeAvatarFx = createEffect<TChangeAvatarRequest, string, Error>(
+  {
+    name: "changeAvatarFx",
+    handler: async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await app.post<any>("/users/avatar/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    },
+  }
+);
 
 $tokenData.on(authenticateFx.doneData, (_, payload) => payload);
 $user.on(loadAuthenticatedUserFx.doneData, (_, userData) => userData);
 $user.on(editProfileFx.doneData, (_, response) => response);
-$user.on(changeAvatarFx.doneData, (state, avatar) => ({ ...(state || {}), avatar }));
+$user.on(changeAvatarFx.doneData, (state, avatar) => ({
+  ...(state || {}),
+  avatar,
+}));
 
 sample({
-  clock: sendCodeEv,
-  target: sendCodeFx,
+  clock: sendAuthCodeEv,
+  target: sendAuthCodeFx,
 });
 
 sample({

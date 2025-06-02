@@ -6,7 +6,7 @@ import {
   $filmAttachments,
   $filmAttachmentsLoading,
 } from "../effector/films.store";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useStoreMap, useUnit } from "effector-react";
 import {
   chakra,
@@ -34,12 +34,12 @@ import {
   ActorsList,
 } from "../components/films/actors-list";
 import { ScheduleNew } from "../components/films/schedule-new";
-import { loadScheduleEv } from "../effector/schedule.store";
+import { $schedule, loadScheduleEv } from "../effector/schedule.store";
 import { $selectedRegion } from "../effector/regions.store";
 import { AgeVerificationModal } from "../components/films/age-verification-modal";
 import { AttachmentsList } from "../components/films/attachments-list";
-import { MakeOrderModal } from "../components/films/make-order-modal";
-import { schedule } from "../test";
+import { MakeOrderModal } from "../components/films/order-modal/make-order-modal";
+import { $tokenData, $user } from "../effector/users.store";
 
 const FilmTrailerContainer = chakra("div", {
   base: {
@@ -85,7 +85,14 @@ export function FilmNew() {
     null
   );
   const { filmId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const scheduleId: number | null = searchParams.get("scheduleId")
+    ? +searchParams.get("scheduleId")!
+    : null;
+
   const [
+    schedule,
     region,
     film,
     loadFilm,
@@ -93,8 +100,8 @@ export function FilmNew() {
     actors,
     actorsLoading,
     attachments,
-    attachmentsLoading,
   ] = useUnit([
+    $schedule,
     $selectedRegion,
     $film,
     loadFilmEv,
@@ -105,6 +112,11 @@ export function FilmNew() {
     $filmAttachmentsLoading,
   ]);
 
+  const isAuthorized = useStoreMap(
+    $tokenData,
+    (tokenData) => !!tokenData.accessToken
+  );
+
   const filmTrailer = useStoreMap<
     TFilmAttachment[],
     TFilmAttachment | undefined
@@ -113,20 +125,22 @@ export function FilmNew() {
   );
 
   const handleScheduleSelect = (schedule: TSchedule) => {
+    if (!isAuthorized) {
+      return navigate(
+        `/login/?next=${encodeURIComponent(
+          window.location.pathname +
+            `?scheduleId=${schedule.id}` +
+            window.location.hash
+        )}`
+      );
+    }
     setSelectedSchedule(schedule);
   };
 
-  const handleSeatSelect = useCallback(
-    (seat: TSeat) => {
-      if (!selectedSchedule) {
-        return;
-      }
-      return navigate(
-        `/order?scheduleId=${selectedSchedule.id}&seatId=${seat.id}`
-      );
-    },
-    [selectedSchedule]
-  );
+  const handleCloseOrderDialog = () => {
+    setSelectedSchedule(null);
+    setSearchParams('scheduleId', undefined);
+  }
 
   useEffect(() => {
     if (!filmId) {
@@ -141,6 +155,23 @@ export function FilmNew() {
     loadFilm({ filmId: +filmId });
     loadScheduleEv({ regionId: region?.id, filmId: +filmId! });
   }, [region, filmId]);
+
+  useEffect(() => {
+    if (!scheduleId || !schedule) {
+      return;
+    }
+
+    const selectedScheduleByQuery = schedule.find(
+      (schedule_) => schedule_.id === scheduleId
+    );
+
+    if (!selectedScheduleByQuery) {
+      return;
+    }
+
+    console.log(selectedScheduleByQuery);
+    setSelectedSchedule(selectedScheduleByQuery);
+  }, [scheduleId, schedule]);
 
   return (
     <>
@@ -185,7 +216,12 @@ export function FilmNew() {
                   </Skeleton>
                 </Flex>
 
-                <DataList.Root flexDirection="row" flexWrap="wrap" gapX={10} size="lg">
+                <DataList.Root
+                  flexDirection="row"
+                  flexWrap="wrap"
+                  gapX={10}
+                  size="lg"
+                >
                   <DataList.Item key="1">
                     <DataList.ItemLabel>Продолжительность</DataList.ItemLabel>
                     <DataList.ItemValue>
@@ -313,7 +349,7 @@ export function FilmNew() {
 
       <MakeOrderModal
         schedule={selectedSchedule!}
-        onClose={() => setSelectedSchedule(null)}
+        onClose={handleCloseOrderDialog}
       />
     </>
   );

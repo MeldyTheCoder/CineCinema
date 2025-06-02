@@ -1,15 +1,22 @@
 import { createEffect, createEvent, createStore, sample, split } from "effector";
-import { OrderStatuses, TOrder } from "../types";
+import { OrderStatuses, TOrder, TSeat } from "../types";
 import { app } from "../app";
 import { camelArray, objectToCamelCase } from "../utils/camelCase";
 import { pending } from "patronum";
 import { stringify } from "qs";
+import { object } from "zod";
 
 type LoadUserOrdersRequest = {
   page?: number;
   status?: OrderStatuses | `${OrderStatuses}`;
   search?: string;
 };
+
+type CreateOrderRequest = {
+  seats: number[];
+  schedule: number;
+  paymentData: {paymentData: string; [x: string]: any}
+}
 
 export type AddLocalOrderRequest = {
   orderId: number;
@@ -53,6 +60,19 @@ export const addLocalOrderFx = createEffect<AddLocalOrderRequest, TOrder, Error>
         });
         return objectToCamelCase<TOrder>(response?.data!);   
     }
+});
+
+export const createOrderFx = createEffect<CreateOrderRequest, TOrder, Error>({
+  name: 'createOrderFx',
+  handler: async ({schedule, paymentData, seats}) => {
+    const response = await app.post<TOrder>('/orders/create/', {
+      schedule,
+      seats,
+      paymentData,
+    });
+
+    return objectToCamelCase<TOrder>(response?.data!);
+  }
 });
 
 export const $ordersLoading = pending([loadUserOrdersFx]);

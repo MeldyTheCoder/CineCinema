@@ -2,7 +2,6 @@ import { Stack, RadioCard, HStack, Icon } from "@chakra-ui/react";
 import { TOffice } from "../types";
 import { RadioBadges, RadioBadgesProps } from "./radio-badges";
 import { FaBuilding } from "react-icons/fa";
-import { OfficesMap } from "./maps/offices-map";
 import { useUnit } from "effector-react";
 import { $offices } from "../effector/offices.store";
 
@@ -13,7 +12,6 @@ export function OfficeSelect({ value, onSelect }: OfficeSelectProps) {
 
   return (
     <Stack gap={5} direction="column">
-      <OfficesMap selectedOffice={value} offices={offices} onOfficeSelect={(office) => onSelect?.(office)}/>
       <RadioCard.Root
         orientation="vertical"
         align="center"

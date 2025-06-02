@@ -1,5 +1,5 @@
 import React from "react";
-import { TActor, TFilmActor } from "../types";
+import { TActor, TFilmActor } from "../../types";
 import {
   Button,
   Card,

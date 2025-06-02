@@ -13,7 +13,32 @@ from redis_manager import check_phone_code, generate_phone_code
 router = fastapi.APIRouter(prefix="/users", tags=["Пользователи"])
 
 
-@router.post("/send-sms/", name="Отправка CMC-кода на номер телефона")
+@router.post('/registration/send-sms/', name='Отправка СМС-кода на номер телефона для регистрации')
+async def send_sms_unregistered(data: serializers.SendSmsRequest) -> dict:
+    """Отправка СМС-кода авторизации пользователю."""  # noqa: RUF002
+    user: models.User | None = await models.User.objects.get_or_none(phone=data.phone)
+    if user:
+        raise exceptions.USER_ALREADY_REGISTERED_EXCEPTION
+
+    code = generate_phone_code(phone=data.phone)
+    print(f"[+] Код отправлен: {code}")
+    return {"message": "Код отправлен"}
+
+@router.post("/registration/validate-sms/", name="Валидация СМС-кода и регистрация")
+async def validate_sms_code(data: serializers.ValidateRegistrationSmsRequest):
+    """Проверка СМС-кода на этапе регистрации пользователя."""  # noqa: RUF002
+    user: models.User | None = await models.User.objects.get_or_none(phone=data.phone)
+    if user:
+        raise exceptions.USER_ALREADY_REGISTERED_EXCEPTION
+
+    code_valid = check_phone_code(phone=data.phone, code_input=data.code)
+    if not code_valid:
+        raise fastapi.HTTPException(detail="Неверно введен код.", status_code=400)
+
+    user: models.User = await models.User.objects.create(phone=data.phone, first_name=data.first_name)
+    return create_token(user=user)
+
+@router.post("/auth/send-sms/", name="Отправка CMC-кода на номер телефона")
 async def send_sms(data: serializers.SendSmsRequest) -> dict:
     """Отправка СМС-кода авторизации пользователю."""  # noqa: RUF002
     user: models.User | None = await models.User.objects.get_or_none(phone=data.phone)
@@ -25,7 +50,7 @@ async def send_sms(data: serializers.SendSmsRequest) -> dict:
     return {"message": "Код отправлен"}
 
 
-@router.post("/validate-sms/", name="Валидация СМС-кода и выдача токена")
+@router.post("/auth/validate-sms/", name="Валидация СМС-кода и выдача токена")
 async def validate_sms_code(data: serializers.ValidateSmsRequest) -> dict:
     """Проверка СМС-кода авторизации пользователя."""  # noqa: RUF002
     user: models.User | None = await models.User.objects.get_or_none(phone=data.phone)

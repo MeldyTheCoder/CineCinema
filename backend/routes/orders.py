@@ -1,6 +1,7 @@
 import typing
 
 import fastapi
+import ormar
 
 import auth
 import exceptions
@@ -13,38 +14,44 @@ router = fastapi.APIRouter(
     tags=["Офисы и регионы"],
 )
 
-@router.post('/', name="Создание заказа")
+@router.post('/create', name="Создание заказа")
 async def create_order(user: auth.UserType, form_data: serializers.CreateOrderRequest):
     current_date = dates.get_now()
     day_id = dates.day_of_year(current_date)
     year = current_date.year
+    time = dates.seconds_since_start_of_day(current_date)
 
-    schedule = await models.Schedule.object.get_or_none(
-        id=form_data.schedule_id,
-        day_id__gte=day_id,
-        year__gte=year,
+    schedule = await models.Schedule.objects.select_related(['film', 'hall']).get_or_none(
+        ormar.or_(
+            ormar.and_(
+                day_id__gt=day_id,
+                year__gte=year,
+            ),
+            ormar.and_(
+                day_id=day_id,
+                year=year,
+                time__gt=time,
+            )
+        ),
+        hall__active=True,
+        id=form_data.schedule,
     )
+
     if not schedule:
         raise exceptions.SCHEDULE_NOT_FOUND
 
-    schedule_date = dates.create_datetime(schedule.day_id, schedule.year, schedule.time)
-    if schedule_date < current_date:
-        raise exceptions.SCHEDULE_NOT_FOUND
-
-    seat = await models.Seat.objects.get_or_none(
-        id=form_data.seat_id,
+    seats = await models.Seat.objects.filter(
+        id__in=form_data.seats,
         hall__id=schedule.hall.id,
-    )
-    if not seat:
+    ).all()
+    if not seats:
         raise exceptions.SEAT_NOT_FOUND
 
-    order = await models.create_order(
-        schedule=schedule,
-        seat=seat,
-        user=user,
-    )
+    if len(seats) < len(form_data.seats):
+        raise exceptions.SEAT_UNAVAILABLE
 
-    return order
+    return await models.create_order(schedule, seats, user)
+
 
 @router.get("/", name="Вывод всех заказов авторизованного пользователя")
 async def get_user_orders(user: auth.UserType, data: typing.Annotated[serializers.UserOrdersRequest, fastapi.Query()]):
@@ -57,7 +64,7 @@ async def get_user_orders(user: auth.UserType, data: typing.Annotated[serializer
             "schedule__hall__office",
             "schedule__hall__office__region",
             "schedule__film__genres",
-            "seat",
+            "seats",
         ],
     ).filter(
         user__id=user.id,

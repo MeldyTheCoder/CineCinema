@@ -21,6 +21,7 @@ import {
   DataList,
   Input,
   SegmentGroup,
+  Bleed,
 } from "@chakra-ui/react";
 import { useUnit } from "effector-react";
 import {
@@ -34,7 +35,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getByDayId, getTimeFromSeconds } from "../../utils/dates";
 import { LuShoppingCart } from "react-icons/lu";
 import { GenresTags } from "../../components/films/genres-tags";
-import { OrderStatuses, TOrder } from "../../types.ts";
+import { OrderStatuses, TOrder, TSeat, TSeatType } from "../../types.ts";
 import { IoTicketOutline, IoReceiptOutline } from "react-icons/io5";
 import { TbCancel, TbCreditCardRefund } from "react-icons/tb";
 import { CiCreditCard1 } from "react-icons/ci";
@@ -43,6 +44,7 @@ import { InputGroup } from "../../components/ui/input-group.tsx";
 import { FaPlus } from "react-icons/fa6";
 import { AddLocalOrderModal } from "../../components/profile/add-local-order-modal.tsx";
 import { toaster } from "../../components/ui/toaster.tsx";
+import { FaCrown } from "react-icons/fa";
 
 const Divider = chakra(Separator, {
   base: {
@@ -72,6 +74,32 @@ const OrderPositionSpan = chakra(
   }
 );
 
+function switchSeatBadgeByType(type: TSeatType) {
+  const commonProps = {
+    width: '100%',
+    borderTopRadius: '10px',
+    borderBottomRadius: '0',
+  };
+
+  switch (type) {
+    case TSeatType.STANDART:
+      return (
+        <Badge colorPalette="gray" {...commonProps} bg="gray.800">
+          <FaCrown />
+          STANDART
+        </Badge>
+      );
+    case TSeatType.VIP:
+      return (
+        <Badge colorPalette="orange" {...commonProps}>
+          <FaCrown />
+          VIP
+        </Badge>
+      );
+    default:
+      return null;
+  }
+}
 function switchOrderStatusesBadgeParams(status: string): [string, string] {
   switch (status) {
     case OrderStatuses.NOT_PAID:
@@ -116,6 +144,33 @@ function OrdersEmptyState() {
   );
 }
 
+export function SeatCard({
+  seat,
+  order,
+}: {
+  readonly seat: TSeat;
+  readonly order: TOrder;
+}) {
+  return (
+    <Card.Root gap="1px" borderRadius="10px" variant="elevated">
+      <Card.Header padding={0}>{switchSeatBadgeByType(seat.type)}</Card.Header>
+
+      <Flex gap="2px" paddingX="10px" paddingY="5px" direction="column" align="center">
+        <Text fontStyle="xs">
+          {seat.row} ряд {seat.column} место
+        </Text>
+
+        <Text fontStyle="sm" fontWeight="semibold">
+          {(seat.priceFactor *
+            order.schedule.hall.priceFactor *
+            order.schedule.film.price) /
+            100}{" "}
+          ₽
+        </Text>
+      </Flex>
+    </Card.Root>
+  );
+}
 export function OrderCard({ order }: { readonly order: TOrder }) {
   const film = order.schedule.film;
 
@@ -190,8 +245,8 @@ export function OrderCard({ order }: { readonly order: TOrder }) {
         src={film.coverUrl}
         objectFit="cover"
         aspectRatio="1x2"
-        width={170}
-        height={270}
+        width={230}
+        height="inherit"
         borderLeftRadius="15px"
       />
 
@@ -270,27 +325,26 @@ export function OrderCard({ order }: { readonly order: TOrder }) {
                   </DataList.ItemValue>
                 </DataList.Item>
               </DataList.Root>
-
-              <DataList.Root size="md">
-                <DataList.Item>
-                  <DataList.ItemLabel>Место</DataList.ItemLabel>
-                  <DataList.ItemValue>
-                    {order.seat.row} ряд {order.seat.column} место
-                  </DataList.ItemValue>
-                </DataList.Item>
-              </DataList.Root>
             </HStack>
           </VStack>
         </Card.Body>
 
         <Divider />
 
+        <Group marginX="20px">
+          {order.seats.map((seat) => (
+            <SeatCard seat={seat} order={order} />
+          ))}
+        </Group>
+
+        <Divider />
+ 
         <Card.Footer justifyContent="space-between">
           <Group>{actionButtons.map((button) => button)}</Group>
           <VStack gap="0px">
-            <OrderPriceLabel>{order.price / 100} RUB</OrderPriceLabel>
+            <OrderPriceLabel>{order.price / 100} ₽</OrderPriceLabel>
             <OrderPositionSpan>
-              1 шт. x {order.price / 100} RUB
+              {order.seats.length} шт. x {order.price / 100} ₽
             </OrderPositionSpan>
           </VStack>
         </Card.Footer>

@@ -58,10 +58,16 @@ def get_level_info(total_bonuses: int) -> dict:
 
 @router.get('/', name="Получить список зачислений/списаний бонусов")
 async def get_bonus_logs(user: auth.UserType):
-    deposit_bonuses_sum = await models.BonusLogs.objects.filter(type=models.BonusLogType.DEPOSIT).sum('bonuses') or 0
-    withdrawal_bonuses_sum = await models.BonusLogs.objects.filter(type=models.BonusLogType.WITHDRAWAL).sum('bonuses') or 0
+    deposit_bonuses_sum = await models.BonusLogs.objects.filter(type=models.BonusLogType.DEPOSIT, user__id=user.id).sum('bonuses') or 0
+    withdrawal_bonuses_sum = await models.BonusLogs.objects.filter(type=models.BonusLogType.WITHDRAWAL, user__id=user.id).sum('bonuses') or 0
     current_bonuses = deposit_bonuses_sum - withdrawal_bonuses_sum
-    logs = await models.BonusLogs.objects.select_related(['order', 'order__schedule__film__genres']).filter(user__id=user.id).all()
+
+    logs = await models.BonusLogs.objects.select_related(
+        ['order', 'order__schedule__film__genres', 'order__seats']
+    ).filter(
+        user__id=user.id,
+    ).all()
+
     total_xp = sum([log.bonuses // 100 * 2 for log in logs])
 
     data = {

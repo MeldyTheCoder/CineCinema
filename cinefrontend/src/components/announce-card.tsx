@@ -10,6 +10,8 @@ const ImageContainer = chakra(Card.Root, {
   base: {
     position: "relative",
     borderRadius: "md",
+    width: {base: '100%', lg: "510px"},
+    height: {base: 'auto', lg: "350px"},
   },
 });
 
@@ -50,8 +52,8 @@ export function AnnounceCard({ announce }: AnnounceCard) {
     <ImageContainer transition="scale 0.3s" _hover={{scale: 1.03}}>
       <Image
         src={announce.coverUrl}
-        width={700}
-        height={370}
+        width="inherit"
+        height="inherit"
         aspectRatio="16x9"
         objectFit="cover"
         borderRadius="inherit"

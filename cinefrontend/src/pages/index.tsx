@@ -1,4 +1,11 @@
-import { Container, Flex, Stack, createListCollection } from "@chakra-ui/react";
+import {
+  Container,
+  Flex,
+  Stack,
+  createListCollection,
+  useBreakpointValue,
+  useMediaQuery,
+} from "@chakra-ui/react";
 import { Header } from "../components/header";
 import { announces } from "../test";
 import { AnnounceCard } from "../components/announce-card";
@@ -23,7 +30,7 @@ export const StyledSlider = styled(Slider)`
   width: 100%;
 
   .slick-track {
-    height: 390px;
+    height: auto;
   }
 
   .slick-slide {
@@ -47,14 +54,30 @@ export const StyledSlider = styled(Slider)`
   .slick-dots > li.slick-active > button::before {
     color: white !important;
   }
+
+  @media screen and (max-width: 500px) {
+    .slick-track {
+      height: auto;
+    }
+  }
 `;
 
 function AnouncesSlider() {
+  const breakPoint = useBreakpointValue({
+    base: "base",
+    sm: "sm",
+    md: "md",
+    lg: "lg",
+    xl: "xl",
+    "2xl": "2xl",
+  });
+
+  console.log(breakPoint);
   const settings = {
     dots: true,
     infinite: true,
     speed: 500,
-    slidesToShow: 3,
+    slidesToShow: ["sm", "md", "base"].includes(breakPoint!) ? 1 : 3,
     slidesToScroll: 1,
     autoplay: true,
     arrows: false,
@@ -77,17 +100,14 @@ export function Index() {
     navigate(`/film/${film.id}`);
   };
 
-  const genres = useMemo<TGenre[]>(
-    () => {
-      console.log(films[0]);
+  const genres = useMemo<TGenre[]>(() => {
+    console.log(films[0]);
 
-      return filterByUnique<TGenre>(
-        films.map((film) => (film?.genres! || []).map((genre) => genre!)).flat(),
-        (genre: TGenre) => genre?.id
-      )
-    },
-    [films]
-  );
+    return filterByUnique<TGenre>(
+      films.map((film) => (film?.genres! || []).map((genre) => genre!)).flat(),
+      (genre: TGenre) => genre?.id
+    );
+  }, [films]);
 
   const genresCollection = useMemo(
     () =>

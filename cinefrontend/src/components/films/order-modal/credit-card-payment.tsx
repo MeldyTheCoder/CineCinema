@@ -1,351 +1,8 @@
-import React, {
-  useEffect,
-  useMemo,
-  useDeferredValue,
-  useState,
-  useRef,
-} from "react";
-import {
-  ActionBar,
-  Badge,
-  Box,
-  Button,
-  Center,
-  chakra,
-  CloseButton,
-  Dialog,
-  Field,
-  Flex,
-  FormatNumber,
-  Grid,
-  GridItem,
-  Group,
-  Heading,
-  Image,
-  Input,
-  Portal,
-  Separator,
-  Stack,
-  Stat,
-  Status,
-  Steps,
-  Table,
-  Text,
-  useDialog,
-  useSteps,
-  UseStepsReturn,
-} from "@chakra-ui/react";
-import { TSchedule, TSeat, TSeatType } from "../../types";
-import { useUnit } from "effector-react";
-import {
-  $seats,
-  $seatsLoading,
-  loadScheduleSeatsFx,
-} from "../../effector/schedule.store";
-import { SeatsGrid } from "../seats-grid";
-import { getByDayId, getTimeFromSeconds } from "../../utils/dates";
-import { TbBuildingPavilion } from "react-icons/tb";
-import { groupByKey } from "../../utils/arrays";
-import { MdEventSeat } from "react-icons/md";
-import { BiSolidSelectMultiple } from "react-icons/bi";
-import { TbCreditCardPay } from "react-icons/tb";
-import { LuCheck, LuShare } from "react-icons/lu";
-import { TiDeleteOutline } from "react-icons/ti";
-import { GrNext } from "react-icons/gr";
-import { toaster } from "../ui/toaster";
-import { CiCreditCard1 } from "react-icons/ci";
+import { Box, Button, chakra, Field, Flex, Grid, GridItem, Input, Text } from "@chakra-ui/react";
 import { useForm } from "@tanstack/react-form";
-import { z } from "zod";
+import { useMemo, useState } from "react";
 import { withMask } from "use-mask-input";
-
-type MakeOrderModalProps = {
-  readonly schedule?: TSchedule;
-  readonly onClose: () => void;
-};
-
-const MAX_SEATS_PER_ORDER = 4;
-
-function SeatsPrice({ schedule, seats }: any) {
-  const groupedTypes = useMemo(() => {
-    const groupedSeats = groupByKey<TSeat>(seats, (seat) => seat.type);
-    return Object.entries(groupedSeats)
-      .filter(
-        ([type]) =>
-          ![TSeatType.DISABLED.toString(), TSeatType.VOID.toString()].includes(
-            type
-          )
-      )
-      .map(([type, seats]) => ({
-        type,
-        price: Math.floor(
-          schedule.film.price * seats[0].priceFactor * seats[0].hall.priceFactor
-        ),
-      }));
-  }, [schedule, seats]);
-
-  const getColorForType = (type: string) => {
-    switch (type) {
-      case TSeatType.DISABLED:
-        return "red";
-      case TSeatType.VIP:
-        return "orange";
-
-      case TSeatType.STANDART:
-        return "gray";
-    }
-  };
-
-  return (
-    <Group>
-      {groupedTypes.map((element) => (
-        <Status.Root
-          size="lg"
-          width="100px"
-          colorPalette={getColorForType(element.type)}
-        >
-          <Status.Indicator />
-          {element.price} RUB
-        </Status.Root>
-      ))}
-    </Group>
-  );
-}
-
-type SeatSelectStageProps = {
-  readonly schedule: TSchedule;
-  readonly onComplete: (_: TSeat[]) => void;
-};
-
-function SeatSelectStage({ schedule, onComplete }: SeatSelectStageProps) {
-  const [selectedSeats, setSelectedSeats] = useState<TSeat[]>([]);
-  const [seats, loading] = useUnit([$seats, $seatsLoading]);
-
-  const selectedSeatsSum = useMemo<number>(() => {
-    const filmPrice = schedule?.film.price || 0;
-    const hallPriceFactor = schedule?.hall.priceFactor || 1;
-
-    return selectedSeats.reduce(
-      (acc, value) => (acc += value.priceFactor * filmPrice * hallPriceFactor),
-      0
-    );
-  }, [selectedSeats, schedule]);
-
-  const handleSeatSelect = (seat: TSeat) => {
-    setSelectedSeats((prev: TSeat[]) => {
-      const seatExists = prev.find((seat_) => seat_.id === seat.id);
-      if (seatExists) {
-        return prev.filter((seat_) => seat_.id !== seat.id);
-      }
-      if (prev.length >= MAX_SEATS_PER_ORDER) {
-        toaster.create({
-          type: "error",
-          title: "Что-то пошло не по плану ;(",
-          description: `К сожалению, за один раз можно забронировать не более ${MAX_SEATS_PER_ORDER} мест.`,
-        });
-        return prev;
-      }
-      return [...prev, seat];
-    });
-  };
-
-  return (
-    <Flex direction="column" gap={10}>
-      <SeatsGrid
-        seats={seats}
-        loading={loading}
-        selected={selectedSeats}
-        onSeatSelect={handleSeatSelect}
-      />
-      <ActionBar.Root
-        open={selectedSeats.length > 0}
-        closeOnInteractOutside={false}
-      >
-        <Portal>
-          <ActionBar.Positioner zIndex={2000}>
-            <ActionBar.Content colorPalette="purple" scale="1.2">
-              <ActionBar.SelectionTrigger>
-                {selectedSeats.length} выбрано
-              </ActionBar.SelectionTrigger>
-
-              <ActionBar.Separator />
-
-              <ActionBar.SelectionTrigger>
-                <Text fontWeight="semibold" fontSize="16px">
-                  {Math.round(selectedSeatsSum)} ₽
-                </Text>
-              </ActionBar.SelectionTrigger>
-
-              <ActionBar.Separator />
-
-              <Button
-                variant="outline"
-                size="xs"
-                onClick={() => onComplete?.(selectedSeats)}
-                disabled={selectedSeats.length <= 0}
-              >
-                <GrNext />
-                Продолжить
-              </Button>
-            </ActionBar.Content>
-          </ActionBar.Positioner>
-        </Portal>
-      </ActionBar.Root>
-    </Flex>
-  );
-}
-
-const SeatsSumaryContainer = chakra("div", {
-  base: {
-    marginTop: "2rem",
-    width: "50%",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    gap: "2rem",
-  },
-});
-
-const CardContainer = chakra("div", {
-  base: {
-    marginTop: "1rem",
-    maxW: "60%",
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "2rem",
-  },
-});
-
-type SeatsConfirmationStageProps = {
-  readonly schedule: TSchedule;
-  readonly selectedSeats: TSeat[];
-  readonly onComplete?: () => void;
-  readonly onBack?: () => void;
-  readonly onSeatRemove: (_: TSeat) => void;
-};
-
-function SeatsConfirmationStage({
-  schedule,
-  selectedSeats,
-  onBack,
-  onSeatRemove,
-  onComplete,
-}: SeatsConfirmationStageProps) {
-  const getBadgeBySeatType = (seat: TSeat) => {
-    switch (seat.type) {
-      case TSeatType.VIP:
-        return <Badge colorPalette="orange">VIP</Badge>;
-      case TSeatType.STANDART:
-        return <Badge colorPalette="gray">STANDART</Badge>;
-    }
-  };
-
-  const selectedSeatsSum = useMemo<number>(() => {
-    const filmPrice = schedule?.film.price || 0;
-    const hallPriceFactor = schedule?.hall.priceFactor || 1;
-
-    return selectedSeats.reduce(
-      (acc, value) => (acc += value.priceFactor * filmPrice * hallPriceFactor),
-      0
-    );
-  }, [selectedSeats, schedule]);
-
-  return (
-    <Center>
-      <SeatsSumaryContainer>
-        <Table.Root size="lg" variant="outline" native borderRadius="15px">
-          <Table.Header>
-            <Table.Row>
-              <Table.ColumnHeader>Зал</Table.ColumnHeader>
-              <Table.ColumnHeader>Ряд и место</Table.ColumnHeader>
-              <Table.ColumnHeader>Тип</Table.ColumnHeader>
-              <Table.ColumnHeader textAlign="end">Цена</Table.ColumnHeader>
-              <Table.ColumnHeader textAlign="end">Действие</Table.ColumnHeader>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {selectedSeats.map((seat) => (
-              <Table.Row
-                key={seat.id}
-                bg="transparent"
-                borderLeftColor={(() => {
-                  switch (seat.type) {
-                    case TSeatType.VIP:
-                      return "orange";
-                    case TSeatType.STANDART:
-                      return "gray";
-                    default:
-                      return undefined;
-                  }
-                })()}
-              >
-                <Table.Cell>{schedule.hall?.title}</Table.Cell>
-                <Table.Cell>
-                  {seat.row} ряд {seat.column} место
-                </Table.Cell>
-                <Table.Cell>{getBadgeBySeatType(seat)}</Table.Cell>
-                <Table.Cell textAlign="end">
-                  {Math.round(
-                    schedule.hall.priceFactor *
-                      seat.priceFactor *
-                      schedule.film.price
-                  )}{" "}
-                  ₽
-                </Table.Cell>
-                <Table.Cell textAlign="end">
-                  <Button
-                    variant="ghost"
-                    colorPalette="red"
-                    onClick={() => onSeatRemove?.(seat)}
-                  >
-                    <TiDeleteOutline />
-                  </Button>
-                </Table.Cell>
-              </Table.Row>
-            ))}
-          </Table.Body>
-        </Table.Root>
-
-        <Flex justify="space-between" align="center" marginX="5px">
-          <Group gap={2}>
-            <Stat.Root>
-              <Stat.Label>Итого</Stat.Label>
-              <Stat.ValueText>
-                {" "}
-                <FormatNumber
-                  value={Math.round(selectedSeatsSum)}
-                  style="currency"
-                  currency="RUB"
-                />
-              </Stat.ValueText>
-            </Stat.Root>
-          </Group>
-
-          <Group>
-            <Button variant="outline" onClick={() => onBack?.()}>
-              Назад
-            </Button>
-            <Button onClick={() => onComplete?.()}>Да, все верно</Button>
-          </Group>
-        </Flex>
-      </SeatsSumaryContainer>
-    </Center>
-  );
-}
-
-type PaymentStageProps = {
-  readonly schedule: TSchedule;
-  readonly selectedSeats: TSeat[];
-  readonly onConfirm: (_: any) => void;
-  readonly onBack: () => void;
-};
-
-type TCardForm = {
-  number: string;
-  dateExpires: string;
-  cvv: string;
-};
+import { z } from "zod";
 
 type CreditCardProps = {
   readonly number: string;
@@ -354,120 +11,91 @@ type CreditCardProps = {
   readonly isFlipped: boolean;
 };
 
-const MirPayStyle = `
-  .st0 {
-    fill:#FFFFFF;
-    stroke:#000000;
-    stroke-width:15;
-  } 
-  .st1 {
-    fill:#37A72E;
-  } 
-  .st2{
-    fill: url(#Combined-Shape_4_);
-  }
-`;
-function CreditCard({ number, dateExpires, cvv, isFlipped }: CreditCardProps) {
-  const ICON_SIZES = { width: "100px", height: "80px" };
-  const ICON_VIEWBOXES = `${ICON_SIZES.width} ${ICON_SIZES.height} 780 780`;
+type TCardForm = {
+  number: string;
+  dateExpires: string;
+  cvv: string;
+};
 
+type CreditCardFormProps = {
+  readonly totalPrice: number;
+  readonly onSubmit?: (_: TCardForm) => void;
+};
+
+const CardContainer = chakra("div", {
+  base: {
+    marginTop: "1rem",
+    maxW: {base: "100%", md: "60%"},
+    display: "flex",
+    flexDirection: {base: "column", xl: 'row'},
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "2rem",
+    paddingX: {base: '5px', md: '0'}
+  },
+});
+
+export function CreditCard({
+  number,
+  dateExpires,
+  cvv,
+  isFlipped,
+}: CreditCardProps) {
   const formattedCardNumber = useMemo(() => {
-    const cleaned = number.replace(/\D/g, '').slice(0, 16);
-    
-    // Создаем массив из 16 символов (цифры + точки)
-    const masked = Array.from({ length: 16 })
-      .map((_, index) => cleaned[index] || '•')
-      .join('');
+    const cleaned = number.replace(/\D/g, "").slice(0, 16);
 
-    // Разбиваем на группы по 4 символа
+    const masked = Array.from({ length: 16 })
+      .map((_, index) => cleaned[index] || "•")
+      .join("");
+
     return [
       masked.slice(0, 4),
       masked.slice(4, 8),
       masked.slice(8, 12),
-      masked.slice(12, 16)
-    ].join(' ');
+      masked.slice(12, 16),
+    ].join(" ");
   }, [number]);
 
   const formattedExpiry = useMemo(() => {
-    const cleaned = dateExpires.replace(/\D/g, '').slice(0, 4);
-    
-    // Создаем маску вида ••/••
-    const masked = Array.from({ length: 4 })
-      .map((_, index) => cleaned[index] || '•')
-      .join('');
+    const cleaned = dateExpires.replace(/\D/g, "").slice(0, 4);
 
-    // Вставляем слеш после первых 2 символов
+    const masked = Array.from({ length: 4 })
+      .map((_, index) => cleaned[index] || "•")
+      .join("");
+
     return `${masked.slice(0, 2)}/${masked.slice(2, 4)}`;
-  }, [dateExpires])
+  }, [dateExpires]);
 
   const getPaymentSystemIcon = (cardNumber: string) => {
     switch (cardNumber.charAt(0)) {
       case "2":
         return (
           <svg
-            version="1.1"
-            id="Layer_1"
             xmlns="http://www.w3.org/2000/svg"
-            xmlnsXlink="http://www.w3.org/1999/xlink"
-            viewBox={ICON_VIEWBOXES}
-            xmlSpace="preserve"
-            {...ICON_SIZES}
+            width="79px"
+            height="63px"
+            viewBox="180 250 780 780"
           >
-            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-            <g
-              id="SVGRepo_tracerCarrier"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            ></g>
-            <g id="SVGRepo_iconCarrier">
-              <style type="text/css">{MirPayStyle}</style>
-              <rect y="0" className="st0" width="780" height="500"></rect>{" "}
-              <g id="Page-1">
-                {" "}
-                <g id="Artboard" transform="translate(-91.000000, -154.000000)">
-                  {" "}
-                  <g id="Group" transform="translate(91.000000, 154.000000)">
-                    {" "}
-                    <path
-                      id="Combined-Shape"
-                      className="st1"
-                      d="M544.1,240.5v108h60v-64h68c28.6-0.2,52.9-18.5,62.1-44H544.1z"
-                    ></path>{" "}
-                    <linearGradient
-                      id="Combined-Shape_4_"
-                      gradientUnits="userSpaceOnUse"
-                      x1="362.4047"
-                      y1="275.4307"
-                      x2="363.4047"
-                      y2="275.4307"
-                      gradientTransform="matrix(201.7633 0 0 -79 -72583.8438 21950.0254)"
-                    >
-                      {" "}
-                      <stop
-                        offset="0"
-                        style={{ stopColor: "#00A0E5" }}
-                      ></stop>{" "}
-                      <stop offset="1" style={{ stopColor: "#0077C3" }}></stop>{" "}
-                    </linearGradient>{" "}
-                    <path
-                      id="Combined-Shape_1_"
-                      className="st2"
-                      d="M536.1,151.5c3.5,44.1,45.3,79,96.3,79c0.2,0,104.3,0,104.3,0 c0.8-4,1.2-8.2,1.2-12.5c0-36.6-29.5-66.2-66-66.5L536.1,151.5z"
-                    ></path>{" "}
-                    <path
-                      id="Combined-Shape_2_"
-                      className="st1"
-                      d="M447.3,229.4l0-0.1L447.3,229.4c0.7-1.2,1.8-1.9,3.2-1.9c2,0,3.5,1.6,3.6,3.5l0,0 v116.5h60v-196h-60c-7.6,0.3-16.2,5.8-19.4,12.7L387,266.6c-0.1,0.4-0.3,0.8-0.5,1.2l0,0l0,0c-0.7,1-1.9,1.7-3.3,1.7 c-2.2,0-4-1.8-4-4v-114h-60v196h60v0c7.5-0.4,15.9-5.9,19.1-12.7l49-105.1C447.2,229.6,447.3,229.5,447.3,229.4L447.3,229.4z"
-                    ></path>{" "}
-                    <path
-                      id="Combined-Shape_3_"
-                      className="st1"
-                      d="M223.3,232.8l-35.1,114.7H145L110,232.7c-0.3-1.8-1.9-3.2-3.9-3.2 c-2.2,0-3.9,1.8-3.9,3.9c0,0,0,0,0,0l0,114h-60v-196h51.5H109c11,0,22.6,8.6,25.8,19.1l29.2,95.5c1.5,4.8,3.8,4.7,5.3,0 l29.2-95.5c3.2-10.6,14.8-19.1,25.8-19.1h15.3h51.5v196h-60v-114c0,0,0,0,0-0.1c0-2.2-1.8-3.9-3.9-3.9 C225.2,229.5,223.6,230.9,223.3,232.8L223.3,232.8z"
-                    ></path>{" "}
-                  </g>{" "}
-                </g>{" "}
-              </g>{" "}
-            </g>
+            <path
+              fill="#4DB45E"
+              d="M461.664 288.608v.096c-.096 0-30.336-.096-38.4 28.8-7.392 26.496-28.224 99.616-28.8 101.632h-5.76s-21.312-74.752-28.8-101.728c-8.064-28.896-38.4-28.8-38.4-28.8h-69.056v219.776h69.088V377.855h5.76l40.32 130.528h47.968l40.32-130.432h5.76v130.432h69.088V288.608h-69.088zM714.048 288.608s-20.256 1.824-29.76 23.041L635.36 419.136h-5.76V288.608h-69.088v219.776h65.248s21.216-1.92 30.721-23.04l47.968-107.488h5.76v130.528h69.088V288.608h-65.249zM810.016 388.416v119.968h69.088v-70.048h74.849c32.64 0 60.256-20.832 70.528-49.888H810.016v-.032z"
+            />
+            <linearGradient
+              id="a"
+              gradientUnits="userSpaceOnUse"
+              x1="1065.561"
+              y1="-978.524"
+              x2="1779.66"
+              y2="-978.524"
+              gradientTransform="matrix(.32 0 0 .32 459.34 646.84)"
+            >
+              <stop offset=".3" stop-color="#00b4e6" />
+              <stop offset="1" stop-color="#088ccb" />
+            </linearGradient>
+            <path
+              fill="url(#a)"
+              d="M953.984 288.608H800.32c7.68 41.856 39.071 75.424 79.647 86.368a110.449 110.449 0 0 0 28.896 3.841h118.432c1.056-4.992 1.536-10.08 1.536-15.36.001-41.345-33.503-74.849-74.847-74.849z"
+            />
           </svg>
         );
       case "3":
@@ -597,13 +225,13 @@ function CreditCard({ number, dateExpires, cvv, isFlipped }: CreditCardProps) {
   };
 
   return (
-    <Box perspective="1000px" width="400px" position="relative">
+    <Box perspective="1000px" width={{base: '100%', sm: "400px"}} position="relative">
       <Box
         transform={isFlipped ? "rotateY(180deg)" : "rotateY(0)"}
         transition="transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)"
         transformStyle="preserve-3d"
         width="100%"
-        height="240px"
+        height={{base: '200px', md: "240px"}}
       >
         <Flex
           position="absolute"
@@ -650,13 +278,7 @@ function CreditCard({ number, dateExpires, cvv, isFlipped }: CreditCardProps) {
   );
 }
 
-function PaymentStage({
-  schedule,
-  selectedSeats,
-  onConfirm,
-  onBack,
-}: PaymentStageProps) {
-  const cardImageRef = useRef<HTMLDivElement>(null);
+export function CreditCardForm({ totalPrice, onSubmit }: CreditCardFormProps) {
   const [cardFlipped, setCardFlipped] = useState<boolean>(false);
 
   const form = useForm({
@@ -665,341 +287,153 @@ function PaymentStage({
       dateExpires: "",
       cvv: "",
     } as TCardForm,
+    onSubmit: ({ value }) => onSubmit?.(value),
   });
 
   const handleValidateCardNumber = (cardNumber: string): boolean => {
-    var s = 0;
-    var doubleDigit = false;
-    for (var i = cardNumber.length - 1; i >= 0; i--) {
-      if (cardNumber[i] === " ") {
-        continue;
-      }
-      var digit = +cardNumber[i];
-      if (doubleDigit) {
+    const cleanedNumber = cardNumber.replace(/\s+/g, "");
+
+    if (!/^\d{13,19}$/.test(cleanedNumber)) {
+      return false;
+    }
+
+    let sum = 0;
+    let shouldDouble = false;
+
+    for (let i = cleanedNumber.length - 1; i >= 0; i--) {
+      let digit = parseInt(cleanedNumber.charAt(i), 10);
+
+      if (shouldDouble) {
         digit *= 2;
-        if (digit > 9) digit -= 9;
+        if (digit > 9) {
+          digit -= 9;
+        }
       }
-      s += digit;
-      doubleDigit = !doubleDigit;
+
+      sum += digit;
+      shouldDouble = !shouldDouble;
     }
-    return s % 10 == 0 && cardNumber.length === 20;
+    return sum % 10 === 0;
   };
 
   return (
-    <Center>
-      <CardContainer>
-        <form.Subscribe selector={(state) => state.values}>
-          {({ number, cvv, dateExpires }) => (
-            <CreditCard
-              number={number}
-              cvv={cvv}
-              dateExpires={dateExpires}
-              isFlipped={cardFlipped}
-            />
-          )}
-        </form.Subscribe>
-        <Grid templateColumns="repeat(4, 1fr)" gap={5}>
-          <GridItem colSpan={4} rowSpan={1}>
-            <form.Field
-              name="number"
-              validators={{
-                onBlur: z
-                  .string()
-                  .min(1, "Обязательное поле.")
-                  .refine(
-                    (value) => handleValidateCardNumber(value),
-                    "Некорректный номер карты"
-                  ),
-              }}
-            >
-              {({ state, handleChange, handleBlur }) => (
-                <Field.Root invalid={state.meta.errors.length > 0} required>
-                  <Field.Label>
-                    Номер карты
-                    <Field.RequiredIndicator />
-                  </Field.Label>
-                  <Input
-                    placeholder="0000 0000 0000 0000"
-                    borderRadius="10px"
-                    value={state.value}
-                    onChange={({ target }) => handleChange(target?.value)}
-                    onBlur={handleBlur}
-                    ref={withMask("9999 9999 9999 9999", {placeholder: ""})}
-                  />
-                  <Field.ErrorText>
-                    {state.meta.errors[0]?.message}
-                  </Field.ErrorText>
-                </Field.Root>
-              )}
-            </form.Field>
-          </GridItem>
-          <GridItem colSpan={2} rowSpan={1}>
-            <form.Field
-              name="dateExpires"
-              validators={{
-                onBlur: z.any(),
-              }}
-            >
-              {({ state, handleChange, handleBlur }) => (
-                <Field.Root invalid={state.meta.errors.length > 0} required>
-                  <Field.Label>
-                    Срок истечения
-                    <Field.RequiredIndicator />
-                  </Field.Label>
+    <CardContainer>
+      <form.Subscribe selector={(state) => state.values}>
+        {({ number, cvv, dateExpires }) => (
+          <CreditCard
+            number={number}
+            cvv={cvv}
+            dateExpires={dateExpires}
+            isFlipped={cardFlipped}
+          />
+        )}
+      </form.Subscribe>
+      <Grid templateColumns="repeat(4, 1fr)" gap={5}>
+        <GridItem colSpan={4} rowSpan={1}>
+          <form.Field
+            name="number"
+            validators={{
+              onChange: z
+                .string()
+                .min(1, "Обязательное поле.")
+                .refine(
+                  (value) => handleValidateCardNumber(value),
+                  "Некорректный номер карты"
+                ),
+            }}
+          >
+            {({ state, handleChange, handleBlur }) => (
+              <Field.Root invalid={!state.meta.isValid} required>
+                <Field.Label>
+                  Номер карты
+                  <Field.RequiredIndicator />
+                </Field.Label>
+                <Input
+                  placeholder="0000 0000 0000 0000"
+                  borderRadius="10px"
+                  value={state.value}
+                  onChange={({ target }) => handleChange(target?.value)}
+                  onBlur={handleBlur}
+                  ref={withMask("9999 9999 9999 9999", { placeholder: "" })}
+                />
+                <Field.ErrorText>
+                  {state.meta.errors[0]?.message}
+                </Field.ErrorText>
+              </Field.Root>
+            )}
+          </form.Field>
+        </GridItem>
+        <GridItem colSpan={2} rowSpan={1}>
+          <form.Field
+            name="dateExpires"
+            validators={{
+              onChange: z.any(),
+            }}
+          >
+            {({ state, handleChange, handleBlur }) => (
+              <Field.Root invalid={!state.meta.isValid} required>
+                <Field.Label>
+                  Срок истечения
+                  <Field.RequiredIndicator />
+                </Field.Label>
 
-                  <Input
-                    placeholder="12/25"
-                    borderRadius="10px"
-                    value={state.value}
-                    onChange={({ target }) => handleChange(target?.value)}
-                    onBlur={handleBlur}
-                    ref={withMask("99/99")}
-                  />
-                  <Field.ErrorText>
-                    {state.meta.errors[0]?.message}
-                  </Field.ErrorText>
-                </Field.Root>
-              )}
-            </form.Field>
-          </GridItem>
-          <GridItem colSpan={2} rowSpan={1}>
-            <form.Field
-              name="cvv"
-              validators={{
-                onBlur: z.coerce
-                  .number()
-                  .int("Значение должно быть целым числом.")
-                  .min(100, "Обязательное поле.")
-                  .max(999, "Максимальное значение - 999."),
-              }}
-            >
-              {({ state, handleChange, handleBlur }) => (
-                <Field.Root invalid={state.meta.errors.length > 0} required>
-                  <Field.Label>
-                    CVV
-                    <Field.RequiredIndicator />
-                  </Field.Label>
+                <Input
+                  placeholder="12/25"
+                  borderRadius="10px"
+                  value={state.value}
+                  onChange={({ target }) => handleChange(target?.value)}
+                  onBlur={handleBlur}
+                  ref={withMask("99/99")}
+                />
+                <Field.ErrorText>
+                  {state.meta.errors[0]?.message}
+                </Field.ErrorText>
+              </Field.Root>
+            )}
+          </form.Field>
+        </GridItem>
+        <GridItem colSpan={2} rowSpan={1}>
+          <form.Field
+            name="cvv"
+            validators={{
+              onChange: z
+                .string()
+                .min(1, "Обязательное поле.")
+                .regex(/^\d{3,4}$/, "Некорректный CVV-код."),
+            }}
+          >
+            {({ state, handleChange, handleBlur }) => (
+              <Field.Root invalid={!state.meta.isValid} required>
+                <Field.Label>
+                  CVV
+                  <Field.RequiredIndicator />
+                </Field.Label>
 
-                  <Input
-                    placeholder="123"
-                    borderRadius="10px"
-                    value={state.value}
-                    onChange={({ target }) => handleChange(target?.value)}
-                    onBlur={() => {
-                      handleBlur();
-                      setCardFlipped(false);
-                    }}
-                    onFocus={() => setCardFlipped(true)}
-                  />
-                  <Field.ErrorText>
-                    {state.meta.errors[0]?.message}
-                  </Field.ErrorText>
-                </Field.Root>
-              )}
-            </form.Field>
-          </GridItem>
+                <Input
+                  placeholder="123"
+                  borderRadius="10px"
+                  value={state.value}
+                  onChange={({ target }) => handleChange(target?.value)}
+                  onBlur={() => {
+                    handleBlur();
+                    setCardFlipped(false);
+                  }}
+                  onFocus={() => setCardFlipped(true)}
+                />
+                <Field.ErrorText>
+                  {state.meta.errors[0]?.message}
+                </Field.ErrorText>
+              </Field.Root>
+            )}
+          </form.Field>
+        </GridItem>
 
-          <GridItem colSpan={2} rowSpan={2} alignItems="end">
-            <Button borderRadius="10px">Оплатить</Button>
-          </GridItem>
-        </Grid>
-      </CardContainer>
-    </Center>
-  );
-}
-
-export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
-  const steps = useSteps({
-    defaultStep: 0,
-    count: 3,
-    linear: true,
-  });
-  const [seats, loading] = useUnit([$seats, $seatsLoading]);
-  const [scheduleCache, setScheduleCache] = useState<TSchedule>(schedule!);
-  const [selectedSeats, setSelectedSeats] = useState<TSeat[]>([]);
-
-  const dialog = useDialog({
-    onOpenChange({ open }) {
-      if (!open) {
-        onClose?.();
-      }
-    },
-  });
-
-  const handleCompleteSeatsStage = (seats: TSeat[]) => {
-    setSelectedSeats(seats);
-    steps.goToNextStep();
-  };
-
-  const items = [
-    {
-      key: "seat",
-      children: (
-        <SeatSelectStage
-          schedule={schedule!}
-          onComplete={handleCompleteSeatsStage}
-        />
-      ),
-      icon: <MdEventSeat />,
-    },
-    {
-      key: "confirm",
-      children: (
-        <SeatsConfirmationStage
-          schedule={schedule!}
-          selectedSeats={selectedSeats}
-          onSeatRemove={(seat) =>
-            setSelectedSeats((prev) =>
-              prev.filter((seat_) => seat_.id !== seat.id)
-            )
-          }
-          onComplete={() => steps.goToNextStep()}
-          onBack={() => steps.goToPrevStep()}
-        />
-      ),
-      icon: <BiSolidSelectMultiple />,
-    },
-    {
-      key: "payment",
-      children: (
-        <PaymentStage
-          schedule={schedule!}
-          selectedSeats={selectedSeats}
-          onBack={() => steps.goToPrevStep()}
-          onConfirm={() => steps.goToNextStep()}
-        />
-      ),
-      icon: <TbCreditCardPay />,
-    },
-  ];
-
-  useEffect(() => {
-    if (!schedule) {
-      return;
-    }
-
-    loadScheduleSeatsFx({ scheduleId: schedule.id });
-  }, [schedule]);
-
-  useEffect(() => {
-    if (schedule) {
-      setScheduleCache(schedule);
-      dialog.setOpen(true);
-    } else {
-      dialog.setOpen(false);
-    }
-  }, [schedule]);
-
-  if (!scheduleCache) {
-    return null;
-  }
-
-  return (
-    <Dialog.RootProvider
-      size="full"
-      motionPreset="slide-in-bottom"
-      unmountOnExit
-      value={dialog}
-    >
-      <Portal>
-        <Dialog.Backdrop />
-        <Dialog.Positioner>
-          <Dialog.Content>
-            <Dialog.Header>
-              <Center width="100%">
-                <Grid
-                  templateColumns="repeat(3, 2fr)"
-                  gapX={5}
-                  gapY={2}
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <GridItem rowSpan={6} colSpan={1}>
-                    <Image
-                      src={scheduleCache.film.coverUrl}
-                      aspectRatio="1x2"
-                      borderRadius="15px"
-                      width="125px"
-                    />
-                  </GridItem>
-
-                  <GridItem colSpan={2} rowSpan={1}>
-                    <Text textStyle="xl">{scheduleCache.film.title}</Text>
-                  </GridItem>
-
-                  <GridItem colSpan={2} rowSpan={1}>
-                    <Text fontSize="25px" fontWeight="bold">
-                      {scheduleCache.hall.office.title}
-                    </Text>
-                  </GridItem>
-
-                  <GridItem colSpan={2} rowSpan={1}>
-                    <Group>
-                      <Text fontSize="20px" fontWeight="500" textStyle="xl">
-                        {`${getByDayId(
-                          scheduleCache.dayId,
-                          scheduleCache.year
-                        ).format("DD MMMM YYYY")} • ${getTimeFromSeconds(
-                          scheduleCache.time
-                        )}`}
-                      </Text>
-                    </Group>
-                  </GridItem>
-
-                  <GridItem colSpan={2} rowSpan={1}>
-                    <Group>
-                      <Badge background="gray.800" borderRadius="lg">
-                        {scheduleCache.film.ageRestriction}+
-                      </Badge>
-
-                      <Badge colorPalette="purple">
-                        <TbBuildingPavilion />
-                        <Text fontSize="12px">{scheduleCache.hall.title}</Text>
-                      </Badge>
-                    </Group>
-                  </GridItem>
-                  <GridItem colSpan={2} rowSpan={1} paddingTop="10px">
-                    <SeatsPrice schedule={scheduleCache} seats={seats} />
-                  </GridItem>
-                </Grid>
-              </Center>
-            </Dialog.Header>
-
-            <Separator width="100%" />
-
-            <Dialog.Body marginTop="2rem" justifyContent="center">
-              <Steps.RootProvider value={steps} size="sm">
-                <Steps.List w="50%" alignSelf="center">
-                  {items.map((step, index) => (
-                    <Steps.Item key={index} index={index}>
-                      <Steps.Indicator
-                        alignItems="center"
-                        justifyContent="center"
-                        transition="background 0.3s;color 0.3s"
-                        _hover={{ bg: "gray.500" }}
-                        onClick={() => steps.setStep(index)}
-                      >
-                        <Steps.Status
-                          incomplete={step.icon}
-                          complete={<LuCheck />}
-                        />
-                      </Steps.Indicator>
-                      <Steps.Separator />
-                    </Steps.Item>
-                  ))}
-                </Steps.List>
-
-                <Steps.Content key={items[steps.value].key} index={steps.value}>
-                  {items[steps.value].children}
-                </Steps.Content>
-              </Steps.RootProvider>
-            </Dialog.Body>
-            <Dialog.CloseTrigger asChild>
-              <CloseButton size="sm" />
-            </Dialog.CloseTrigger>
-          </Dialog.Content>
-        </Dialog.Positioner>
-      </Portal>
-    </Dialog.RootProvider>
+        <GridItem colSpan={{base: 4, lg: 2}} rowSpan={2} alignItems="end">
+          <Button borderRadius="15px" gap="5px" width="100%">
+            Оплатить <strong>{Math.round(totalPrice / 100)} ₽</strong>
+          </Button>
+        </GridItem>
+      </Grid>
+    </CardContainer>
   );
 }

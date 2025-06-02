@@ -5,6 +5,7 @@ export type TUser = {
     phone: string;
     email: string | null;
     avatar: string;
+    registrationDate: string;
 }
 
 export enum TAgeRestiction {
@@ -94,7 +95,7 @@ export type TSchedule = {
 export type TOrder = {
     id: number;
     schedule: TSchedule;
-    seat: TSeat;
+    seats: TSeat[];
     dateCreated: string;
     totalPrice: number;
     user: TUser;

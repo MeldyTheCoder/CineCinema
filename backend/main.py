@@ -8,7 +8,7 @@ from starlette.responses import StreamingResponse
 import exceptions
 import models
 import settings
-from routes import actors, films, halls, orders, regions, schedule, users, bonuses
+from routes import actors, bonuses, films, halls, orders, regions, schedule, users
 
 app = fastapi.FastAPI(
     title="CineVision Backend",

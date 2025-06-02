@@ -5,6 +5,7 @@ import { MdPhotoCamera } from "react-icons/md";
 import { Avatar } from "../ui/avatar";
 import { toaster } from "../ui/toaster";
 import { useEffect } from "react";
+import dayjs from "dayjs";
 
 type TUserHeaderCard = {
   readonly disableUploadAvatar?: boolean;
@@ -100,7 +101,7 @@ export function UserHeaderCard({ disableUploadAvatar, user }: TUserHeaderCard) {
         </FullNameSpan>
       </GridItem>
       <GridItem colSpan={10} rowSpan={1}>
-        <DateRegSpan>Дата регистрации: 21 сентября 2025</DateRegSpan>
+        <DateRegSpan>Дата регистрации: {dayjs(user.registrationDate).format('D MMMM YYYY')}</DateRegSpan>
       </GridItem>
     </Grid>
   );

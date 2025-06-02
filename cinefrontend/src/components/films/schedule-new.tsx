@@ -20,8 +20,12 @@ import {
   Group,
   Badge,
   Skeleton,
+  Box,
+  Card,
 } from "@chakra-ui/react";
 import { TbBuildingPavilion } from "react-icons/tb";
+import { Map } from "./map";
+import styled from "styled-components";
 
 const DayBoxContainer = chakra("div", {
   base: {
@@ -37,6 +41,16 @@ const DayBoxContainer = chakra("div", {
     gap: "5px",
   },
 });
+
+const MapWrapper = styled(Card.Root).attrs({
+  variant: "elevated",
+})`
+  div[dir="ltr"] {
+    border-radius: 10px;
+  }
+  border-radius: 10px;
+  padding: 1px;
+`;
 
 function groupByDate(schedule: TSchedule[]) {
   return groupByKey(schedule, (scheduleElement) => {
@@ -134,7 +148,7 @@ function ScheduleButton({ schedule, onClick }: ScheduleButtonProps) {
           {getTimeFromSeconds(schedule.time)}
         </Link>
         <Text fontSize="12px">
-          {schedule.film.price * schedule.hall.priceFactor} ₽
+          {(schedule.film.price * schedule.hall.priceFactor) / 100} ₽
         </Text>
       </Stack>
     </div>
@@ -200,15 +214,26 @@ function OfficeCard({ title, schedule, onScheduleSelect }: OfficeCardProps) {
   const groupedByHalls = useMemo(() => groupByHall(schedule), [schedule]);
 
   return (
-    <Stack gap={5} direction="row" width="100%">
-      <Image
+    <Stack
+      gap={{ base: 10, lg: 5 }}
+      direction={{ base: "column", lg: "row" }}
+      width="100%"
+    >
+      {/* <Image
         src="https://s.afisha.ru/ms/-D7CB6T-qFwhCjJ54Kt31tNU-E_PAQT3uTBpBPJ4HJM.jpg"
         aspectRatio="2x1"
-        width="300px"
+        width={{base: "100%", lg: "300px"}}
         height="200px"
         objectFit="cover"
         borderRadius="15px"
-      />
+      /> */}
+      <MapWrapper width={{ base: "100%", lg: "300px" }} height="200px">
+        <Map
+          longitude={35.9242}
+          latitude={56.8625}
+          key={`map-${title}`}
+        />
+      </MapWrapper>
       <Stack gapY={3} direction="column">
         <Heading>{title}</Heading>
         <Stack gap={5}>

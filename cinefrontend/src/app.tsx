@@ -19,12 +19,16 @@ app.interceptors.request.use(async (request) => {
 
 app.interceptors.response.use(async (response) => {
     if (response.status === 401) {
-        logoutFx();
+        logoutFx().then(() => {
+            window.location.href = `/login/?next=${encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)}`;
+        });
     }
     return response;
 }, async (error) => {
     if (error.response && error.response.status === 401) {
-        logoutFx();
+        logoutFx().then(() => {
+            window.location.href = `/login/?next=${encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)}`;
+        });
     }
     return error;
 })

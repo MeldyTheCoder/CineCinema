@@ -2,12 +2,12 @@ import datetime
 import enum
 
 import databases
-import fastapi
 import ormar
 import sqlalchemy
 import sqlalchemy_utils
-import fn_utils as dates
+
 import exceptions
+import fn_utils as dates
 import settings
 
 if not sqlalchemy_utils.database_exists(settings.DATABASE_URL):
@@ -84,10 +84,14 @@ class User(BaseOrmarModel):
     )
 
     first_name = ormar.String(max_length=50, nullable=False)
-    last_name = ormar.String(max_length=50, nullable=False)
+    last_name = ormar.String(max_length=50, nullable=True)
     phone = ormar.String(max_length=20, nullable=False)
     email = ormar.String(nullable=True, max_length=120)
     avatar = ormar.Text(nullable=True)
+    registration_date = ormar.DateTime(
+        default=get_current_time,
+        nullable=True,
+    )
 
 
 class Region(BaseOrmarModel):
@@ -396,11 +400,11 @@ class Order(BaseOrmarModel):
         nullable=False,
     )
 
-    seat = ormar.ForeignKey(
+    seats = ormar.ManyToMany(
         to=Seat,
         ondelete=ormar.ReferentialAction.RESTRICT,
         onupdate=ormar.ReferentialAction.CASCADE,
-        nullable=False,
+        nullable=True,
     )
 
     date_created = ormar.DateTime(
@@ -576,32 +580,37 @@ class BonusLogs(BaseOrmarModel):
     )
 
 @database.transaction()
-async def create_order(schedule: Schedule, seat: Seat, user: User):
+async def create_order(schedule: Schedule, seats: list[Seat], user: User):
     """
     Создание заказа на фильм, зал, время и место.
     """
-    seat_unavailable = await Order.object.filter(
-        seat__id=seat.id,
-        schedule__id=schedule.id,
-        status__not__in=[
-            OrderStatuses.CANCELED,
-            OrderStatuses.REFUND,
-            OrderStatuses.COMPLETE,
-        ]
-    ).exists()
+    total_price = 0
 
-    if seat_unavailable:
-        raise exceptions.SEAT_UNAVAILABLE
+    for seat in seats:
+        seat_unavailable = await Order.objects.filter(
+            seats__id=seat.id,
+            schedule__id=schedule.id,
+            status__in=[
+                OrderStatuses.NOT_PAID,
+                OrderStatuses.PAID,
+                OrderStatuses.POSTPONED,
+            ],
+        ).exists()
+        if seat_unavailable:
+            raise exceptions.SEAT_UNAVAILABLE
 
-    total_price = schedule.film.price * 100 * schedule.hall.price_factor * seat.price_factor
+        total_price += schedule.film.price * schedule.hall.price_factor * seat.price_factor
+
     order = await Order.objects.create(
         schedule=schedule,
-        seat=seat,
         user=user,
         office=schedule.hall.office,
         status=OrderStatuses.NOT_PAID,
         price=total_price,
     )
+
+    for seat in seats:
+        await order.seats.add(seat)
 
     await BonusLogs.objects.create(
         order=order,

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { Header } from "../components/header";
-import { LoginForm } from "../components/login-form";
+import { LoginForm } from "../components/auth/login-form.tsx";
 import { useStoreMap } from "effector-react";
 import { $tokenData } from "../effector/users.store.ts";
 import { Navigate, useSearchParams } from "react-router-dom";

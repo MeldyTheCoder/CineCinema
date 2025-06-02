@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime  # noqa: TC003
 import re
+import typing
 
 import pydantic
 from fastapi_camelcase import CamelModel
@@ -13,15 +14,17 @@ import models
 def generate_pydantic_camel_alias(alias: str) -> str:
     return alias[0].lower + alias[1:].replace("_", "")
 
-class BaseModel(
-    CamelModel
-):
+
+class BaseModel(CamelModel):
     """Базовая модель pydantic."""
 
     class Config:  # noqa: D106
         alias_generator = generate_pydantic_camel_alias  # snake_case → camelCase
         from_attributes = True
-        populate_by_name = True  # Разрешает использовать как исходные имена, так и алиасы
+        populate_by_name = (
+            True  # Разрешает использовать как исходные имена, так и алиасы
+        )
+
 
 class SendSmsRequest(BaseModel):
     """Модель валидации формы отправки смс на авторизацию."""
@@ -57,6 +60,20 @@ class ValidateSmsRequest(BaseModel):
         return code
 
 
+class ValidateRegistrationSmsRequest(ValidateSmsRequest):
+    """Модель валидации формы ввода смс на этапе регистрации пользователя."""
+
+    first_name: str = pydantic.Field(alias="firstName", title="Имя")
+
+    @pydantic.field_validator("first_name")
+    def validate_name(cls, value: str):  # noqa: ANN201, N805
+        if " " in value:
+            msg = "В имени не может быть пробелов."  # noqa: RUF001
+            raise ValueError(msg)
+
+        return value
+
+
 class RegionsRequest(BaseModel):
     """Модель валидаци формы запроса на все доступные регионы."""
 
@@ -65,14 +82,13 @@ class OfficesRequest(BaseModel):
     """Модель валидации формы запроса на все доступные офисы."""
 
     region_id: int | None = pydantic.Field(
-        alias="regionId", default=None, title="ID региона"
+        alias="regionId", default=None, title="ID региона",
     )
 
 
 class ScheduleRequest(BaseModel):
     """Модель валидации формы запроса на расписание фильмов."""
 
-    # hall_id: int | None = pydantic.Field(alias="hallId", default=None, title="ID зала")
     film_id: int = pydantic.Field(
         alias="filmId",
         default=None,
@@ -88,8 +104,7 @@ class ScheduleRequest(BaseModel):
         default=None,
         title="Максимальная дата расписания",
     )
-    #
-    # office_id: int = pydantic.Field(alias="officeId", title="ID офиса")
+
     region_id: int = pydantic.Field(
         alias="regionId",
         title="ID региона",
@@ -142,6 +157,7 @@ class FimlsSearchRequest(BaseModel):
         title="ID офиса",
     )
 
+
 class EditProfileRequest(BaseModel):
     """Модель редактирования профиля авторизованного пользователя."""
 
@@ -168,6 +184,7 @@ class EditProfileRequest(BaseModel):
         title="E-mail",
     )
 
+
 class UserOrdersRequest(BaseModel):
     page: int | None = pydantic.Field(
         alias="page",
@@ -187,9 +204,10 @@ class UserOrdersRequest(BaseModel):
         title="Статус заказа",
     )
 
+
 class AddLocalOrderRequest(BaseModel):
     order_id: int = pydantic.Field(
-        alias='orderId',
+        alias="orderId",
         title="Номер заказа",
     )
 
@@ -198,14 +216,97 @@ class AddLocalOrderRequest(BaseModel):
         title="Цена заказа",
     )
 
-class CreateOrderRequest(BaseModel):
-    seat_id: int = pydantic.Field(
-        alias="seatId",
-        title="ID места",
+
+class CreditCardData(BaseModel):
+    """Модель карты пользователя."""
+
+    number: str = pydantic.Field(alias="number", title="Номер карты")
+
+    date_expires: str = pydantic.Field(
+        alias="dateExpires",
+        title="Срок истечения карты",
     )
 
-    schedule_id: int = pydantic.Field(
-        alias="scheduleId",
+    cvv: str = pydantic.Field(
+        alias="cvv",
+        title="CVV",
+    )
+
+    @pydantic.field_validator("date_expires")
+    def validate_date_expires(cls, value: str):  # noqa: ANN201, N805
+        if "/" not in value:
+            msg = "Некорректная дата срока истечения карты."
+            raise ValueError(msg)
+
+        month, year = (int(record) for record in value.split("/", maxsplit=1))
+        if month < 0 or month > 12:  # noqa: PLR2004
+            msg = "Месяц даты истечения карты должен быть между 1 и 12 включительно."
+            raise ValueError(
+                msg,
+            )
+
+        return value
+
+    @pydantic.field_validator("cvv")
+    def validate_cvv(cls, value: str):  # noqa: ANN201, N805
+        if len(value) < 3 or len(value) > 4:  # noqa: PLR2004
+            msg = "Некорректный CVV код."
+            raise ValueError(msg)
+
+        if not value.isdigit():
+            msg = "Значение должно быть целым числом."
+            raise ValueError(msg)
+
+        return value
+
+    @pydantic.field_validator("number")
+    def validate_card_number(cls, value: str):  # noqa: ANN201, N805
+        if len(value) != 4 * 4:
+            msg = "Неверный номер карты"
+            raise ValueError(msg)
+
+        if not value.isdigit():
+            msg = "Значение номера карты должно быть целым числом."
+            raise ValueError(msg)
+
+        return value
+
+
+class PaymentDataType(BaseModel):
+    """Модель данных платежа."""
+
+    payment_method: typing.Literal["card", "cash", "bonuses"] = pydantic.Field(
+        alias="paymentMethod",
+        title="Способ оплаты",
+    )
+
+    card: CreditCardData | None = pydantic.Field(
+        alias="card",
+        title="Данные карты",
+        default=None,
+    )
+
+    @pydantic.model_validator(mode="after")
+    def validate_schema(self):  # noqa: ANN201
+        if self.payment_method == "card" and self.card is None:
+            msg = "При выборе метода оплаты картой, данные карты должны быть заполнены корректно."  # noqa: E501
+            raise ValueError(msg)
+
+        return self
+
+
+class CreateOrderRequest(BaseModel):
+    seats: list[int] = pydantic.Field(
+        alias="seats",
+        title="ID мест",
+    )
+
+    schedule: int = pydantic.Field(
+        alias="schedule",
         title="ID расписания",
     )
 
+    payment_data: PaymentDataType = pydantic.Field(
+        alias="paymentData",
+        title="Данные платежа",
+    )

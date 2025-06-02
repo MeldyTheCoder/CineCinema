@@ -64,10 +64,9 @@ function MenuButton({ to, children }: TMenuButton) {
 }
 export function ProfileSidebar() {
   const [user] = useUnit([$user]);
-  const navigate = useNavigate();
 
   const handleLogout = () => {
-    logoutFx().then(() => navigate('/'))
+    logoutFx().then(() => window.location.href = '/')
   }
   return (
     <Card.Root justifyContent="start" textAlign="start" padding="15px">

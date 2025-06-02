@@ -108,7 +108,7 @@ async def get_seats_for_schedule(schedule_id: int):
 
     for seat in seats:
         not_available = await models.Order.objects.filter(
-            seat__id=seat.id,
+            seats__id=seat.id,
             schedule__id=schedule.id,
             status__in=[
                 models.OrderStatuses.NOT_PAID,

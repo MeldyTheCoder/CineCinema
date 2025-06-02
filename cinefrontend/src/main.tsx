@@ -15,6 +15,7 @@ import { ProfileBonuses } from "./pages/profile-pages/bonuses";
 import { Support } from "./pages/profile-pages/support";
 import { checkIsAdultEv } from "./effector/age.store";
 import { FilmNew } from "./pages/film-new";
+import { Registration } from "./pages/registration";
 
 attachLogger();
 
@@ -29,6 +30,7 @@ function renderRoot() {
             <Route path="/film/deprecated/:filmId" Component={Film} />
             <Route path="/film/:filmId" Component={FilmNew} />
             <Route path="/login/" Component={Login} />
+            <Route path="/registration/" Component={Registration} />
             <Route path="/profile/" element={<ProfileLayout />}>
               <Route index element={<ProfileSettings />} />
               <Route path="purchases" element={<ProfilePurchases />} />
