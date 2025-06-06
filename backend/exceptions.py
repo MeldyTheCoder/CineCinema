@@ -77,3 +77,28 @@ SEAT_UNAVAILABLE = fastapi.HTTPException(
     detail="Данное место недоступно для бронирования.",
     status_code=400,
 )
+
+TICKER_PRINT_RESTRICTED = fastapi.HTTPException(
+    detail="Печать билета запрещена, потому что заказ уже закрыт.",
+    status_code=400,
+)
+
+RECEIPT_PRINT_RESTRICTED = fastapi.HTTPException(
+    detail="Печать чека запрещена, потому что заказ не был оплачен или отменен.",
+    status_code=400,
+)
+
+ORDER_ALREADY_CANCELED = fastapi.HTTPException(
+    detail="Заказ уже отменен.",
+    status_code=400,
+)
+
+ORDER_CANCEL_RESTRICTED = fastapi.HTTPException(
+    detail="Нельзя отменить оплаченный или завершенный заказ.",
+    status_code=400,
+)
+
+ORDER_REFUND_RESTRICTED = fastapi.HTTPException(
+    detail="Нельзя оформить возврат на отмененные и неоплаченные заказы.",
+    status_code=400,
+)

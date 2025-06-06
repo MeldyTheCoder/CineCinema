@@ -1,9 +1,3 @@
-import os
-
-DEBUG = bool(os.getenv('DEBUG', True))
-
-DATABASE_URL = os.getenv("DATABASE_URL", 'mysql://localhost:3307@root:1234/cine')
-
 import datetime
 import enum
 
@@ -17,12 +11,6 @@ import exceptions
 import fn_utils as dates
 import settings
 
-if not sqlalchemy_utils.database_exists(settings.DATABASE_URL):
-    sqlalchemy_utils.create_database(settings.DATABASE_URL)
-
-
-BONUS_LOG_PRICE_PERCENT = 5
-
 engine = sqlalchemy.create_engine(settings.DATABASE_URL)
 database = databases.Database(settings.DATABASE_URL)
 metadata = sqlalchemy.MetaData()
@@ -33,8 +21,55 @@ ormar_config = ormar.OrmarConfig(
     database=database,
 )
 
+class AgeRestriction(enum.Enum):
+    ZERO_PLUS = 0
+    SIX_PLUS = 6
+    TWELVE_PLUS = 12
+    SIXTEEN_PLUS = 16
+    EIGHTEEN_PLUS = 18
+
+
+class SeatType(enum.Enum):
+    STANDART = "standart"
+    VIP = "vip"
+    DISABLED = "disabled"
+    VOID = 'void'
+
+
+class MimeType(enum.Enum):
+    VIDEO = "video"
+    PHOTO = "photo"
+
+class OrderStatuses(enum.Enum):
+    NOT_PAID = 'not_paid'
+    PAID = 'paid'
+    COMPLETE = 'complete'
+    POSTPONED = 'postponed'
+    CANCELED = 'canceled'
+    REFUND = 'refund'
+
+class BonusLogType(enum.Enum):
+    DEPOSIT = 'deposit'
+    WITHDRAWAL = 'withdrawal'
+
+class PaymentStatuses(str, enum.Enum):
+    PENDING = "pending"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    REFUNDED = "refunded"
+
+class PaymentMethods(enum.Enum):
+    CARD = 'card'
+    CASH = 'cash'
+    BONUSES = 'bonuses'
+
+
 def get_current_time() -> datetime.datetime:
     return datetime.datetime.now(tz=settings.TIMEZONE)
+
+
+def to_camel_case(alias: str) -> str:
+    return alias[0].lower() + alias[1:].replace("_", "")
 
 
 class BaseOrmarModel(ormar.Model):

@@ -12,6 +12,7 @@ import {
   VStack,
   Spinner,
   Badge,
+  FormatNumber,
 } from "@chakra-ui/react";
 import { Avatar } from "../../components/ui/avatar";
 import { $user } from "../../effector/users.store";
@@ -71,7 +72,7 @@ export function BonusInfo({
       <Group justifyContent="center" width="100%">
         <Badge colorPalette="green" size="lg">
           <FaCoins />
-          {bonuses.currentBonuses / 100}
+          <FormatNumber value={bonuses.currentBonuses / 100} />
         </Badge>
         <Badge colorPalette="purple" size="lg">
           <FaLevelUpAlt />

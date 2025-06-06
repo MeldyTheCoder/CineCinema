@@ -12,7 +12,7 @@ RUN npm run build
 
 FROM umputun/nginx-le
 
-ENV LETSENCRYPT=true
+ENV LETSENCRYPT=false
 ENV LE_EMAIL=software.dev1988@gmail.com
 ENV LE_FQDN=cine-cinema.ru
 

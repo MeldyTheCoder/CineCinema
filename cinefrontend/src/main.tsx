@@ -16,6 +16,8 @@ import { Support } from "./pages/profile-pages/support";
 import { checkIsAdultEv } from "./effector/age.store";
 import { FilmNew } from "./pages/film-new";
 import { Registration } from "./pages/registration";
+import { SuccessPayment } from "./pages/success-payment";
+import { PaymentRedirect } from "./pages/payment-redirect";
 
 attachLogger();
 
@@ -31,6 +33,8 @@ function renderRoot() {
             <Route path="/film/:filmId" Component={FilmNew} />
             <Route path="/login/" Component={Login} />
             <Route path="/registration/" Component={Registration} />
+            <Route path="/redirect/payment/:paymentId" Component={PaymentRedirect} />
+            <Route path="/success-payment/" Component={SuccessPayment} />
             <Route path="/profile/" element={<ProfileLayout />}>
               <Route index element={<ProfileSettings />} />
               <Route path="purchases" element={<ProfilePurchases />} />

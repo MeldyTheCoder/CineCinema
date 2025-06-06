@@ -4,6 +4,7 @@ import fastapi
 import ormar
 
 import auth
+import documents
 import exceptions
 import models
 import serializers
@@ -50,7 +51,12 @@ async def create_order(user: auth.UserType, form_data: serializers.CreateOrderRe
     if len(seats) < len(form_data.seats):
         raise exceptions.SEAT_UNAVAILABLE
 
-    return await models.create_order(schedule, seats, user)
+    return await models.create_order(
+        schedule=schedule,
+        seats=seats,
+        user=user,
+        payment_method=form_data.payment_data.payment_method
+    )
 
 
 @router.get("/", name="Вывод всех заказов авторизованного пользователя")
@@ -82,6 +88,18 @@ async def get_user_orders(user: auth.UserType, data: typing.Annotated[serializer
 
     return await query.order_by('-date_created').all()
 
+@router.get('/pay/{payment_id}/', name="Оплата заказа")
+async def add_local_order(user: auth.UserType, payment_id: int):
+    payment = await models.Payment.objects.get_or_none(id=payment_id)
+    if not payment:
+        raise fastapi.HTTPException(
+            detail="Платеж не найден.",
+            status_code=404,
+        )
+
+    success_url = await models.pay_order(payment, user)
+    return {'redirect_url': success_url}
+
 @router.post('/add/', name="Добавление заказа из чека")
 async def add_local_order(user: auth.UserType, form_data: serializers.AddLocalOrderRequest):
     order = await models.add_local_order(
@@ -92,4 +110,94 @@ async def add_local_order(user: auth.UserType, form_data: serializers.AddLocalOr
 
     return order
 
+@router.get('/ticket/{order_id}/', name="Печать билета на фильм")
+async def print_order_ticket(user: auth.UserType, order_id: int):
+    order = await models.Order.objects.select_related(
+        ['schedule', 'seats', 'schedule__film', 'office', 'office__region']
+    ).get_or_none(
+        id=order_id,
+        user__id=user.id,
+    )
+    if not order:
+        raise exceptions.ORDER_NOT_FOUND
 
+    if order.status in [
+        models.OrderStatuses.NOT_PAID,
+        models.OrderStatuses.COMPLETE,
+        models.OrderStatuses.REFUND,
+        models.OrderStatuses.CANCELED,
+    ]:
+        raise exceptions.TICKER_PRINT_RESTRICTED
+
+    template = await documents.render_ticket_pdf(order)
+    return fastapi.Response(
+        content=template,
+        media_type='text/html',
+        headers={
+            'Content-Disposition': 'attachment; filename=ticket.html'
+        }
+    )
+
+@router.get("/receipt/{order_id}/", name="Печать чека заказа")
+async def print_order_receipt(user: auth.UserType, order_id: int):
+    order = await models.Order.objects.select_related(
+        ['schedule', 'seats', 'schedule__film', 'office', 'office__region', 'schedule__hall']
+    ).get_or_none(
+        id=order_id,
+        user__id=user.id,
+    )
+    if not order:
+        raise exceptions.ORDER_NOT_FOUND
+
+    if order.status in [
+        models.OrderStatuses.NOT_PAID,
+        models.OrderStatuses.CANCELED,
+    ]:
+        raise exceptions.RECEIPT_PRINT_RESTRICTED
+
+    template = await documents.render_receipt(order)
+    return fastapi.Response(
+        content=template,
+        media_type='text/html',
+        headers={
+            'Content-Disposition': 'attachment; filename=ticket.html'
+        }
+    )
+
+@router.post('/cancel/{order_id}/', name="Отмена заказа")
+async def cancel_order(user: auth.UserType, order_id: int):
+    order = await models.Order.objects.select_related(['schedule', 'schedule__film', 'schedule__hall']).get_or_none(
+        id=order_id,
+        user__id=user.id,
+    )
+    if not order:
+        raise exceptions.ORDER_NOT_FOUND
+
+    if order.status in [
+        models.OrderStatuses.CANCELED,
+    ]:
+        raise exceptions.ORDER_ALREADY_CANCELED
+
+    if order.status != models.OrderStatuses.NOT_PAID:
+        raise exceptions.ORDER_CANCEL_RESTRICTED
+
+    await order.update(status=models.OrderStatuses.CANCELED, _columns={'status'})
+    return order
+
+@router.post('/refund/{order_id}/', name="Возврат заказа")
+async def refund_order(user: auth.UserType, order_id: int):
+    order = await models.Order.objects.select_related(['schedule', 'schedule__film', 'schedule__hall']).get_or_none(
+        id=order_id,
+        user__id=user.id,
+    )
+    if not order:
+        raise exceptions.ORDER_NOT_FOUND
+
+    if order.status not in [
+        models.OrderStatuses.PAID,
+        models.OrderStatuses.POSTPONED,
+        models.OrderStatuses.COMPLETE,
+    ]:
+        raise exceptions.ORDER_REFUND_RESTRICTED
+
+    return await models.refund_order(order, user)

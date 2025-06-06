@@ -17,6 +17,7 @@ services:
       - MYSQL_DATABASE=cine
     volumes:
       - mysql_volume:/var/lib/mysql
+      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
     ports:
       - "3307:3306"
 

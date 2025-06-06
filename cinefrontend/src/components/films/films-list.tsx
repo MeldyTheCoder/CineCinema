@@ -1,14 +1,5 @@
 import { TFilm } from "../../types";
-import {
-  Card,
-  Image,
-  Button,
-  Stack,
-  Badge,
-  Wrap,
-  Grid,
-  SimpleGrid,
-} from "@chakra-ui/react";
+import { Card, Image, Stack, Badge, Wrap, SimpleGrid } from "@chakra-ui/react";
 import { GenresTags } from "./genres-tags";
 
 type FilmsListProps = {
@@ -34,7 +25,7 @@ export function FilmCard({ film, onClick }: FilmCardProps) {
         aspectRatio="1x2"
         objectFit="cover"
         width="inherit"
-        height={{ lg: 470, base: "auto" }}
+        height={{ lg: 450, base: "250px" }}
       />
       <Card.Body>
         <Stack gap={2}>
@@ -42,13 +33,13 @@ export function FilmCard({ film, onClick }: FilmCardProps) {
             <Card.Title>{film.title}</Card.Title>
           </Wrap>
 
-          <Stack gap={2} direction="row">
+          <Wrap gap={{ lg: 2, base: "7px" }}>
             {film.genres?.length > 0 && <GenresTags genres={film.genres!} />}
 
             <Badge background="gray.800" borderRadius="lg">
               {film.ageRestriction}+
             </Badge>
-          </Stack>
+          </Wrap>
         </Stack>
       </Card.Body>
     </Card.Root>
@@ -57,7 +48,7 @@ export function FilmCard({ film, onClick }: FilmCardProps) {
 
 export function FilmsList({ films, onFilmClick }: FilmsListProps) {
   return (
-    <SimpleGrid columns={{ lg: 4, md: 3, base: 1 }} gap={10}>
+    <SimpleGrid columns={{ lg: 4, md: 3, base: 2 }} gap={{ base: 2, lg: 10 }}>
       {films.map((film) => (
         <FilmCard film={film} onClick={() => onFilmClick?.(film)} />
       ))}

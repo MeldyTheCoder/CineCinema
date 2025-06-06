@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Кинотеатр | Электронный билет</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --chakra-colors-blue-500: #3182ce;
+            --chakra-colors-purple-500: #805ad5;
+            --chakra-colors-gray-50: #f7fafc;
+            --chakra-colors-gray-100: #edf2f7;
+            --chakra-colors-gray-800: #1a202c;
+            --chakra-radii-md: 8px;
+            --chakra-space-4: 16px;
+            --chakra-space-6: 24px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--chakra-colors-gray-50);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: var(--chakra-colors-gray-800);
+            line-height: 1.5;
+        }
+
+        .ticket {
+            background: white;
+            border-radius: var(--chakra-radii-md);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+                        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            width: 100%;
+            max-width: 380px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--chakra-colors-blue-500), var(--chakra-colors-purple-500));
+            color: white;
+            padding: var(--chakra-space-6);
+            text-align: center;
+        }
+
+        .cinema-brand {
+            font-weight: 700;
+            font-size: 1.75rem;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        .region-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .movie-poster {
+            height: 180px;
+            background: linear-gradient(45deg, #e2e8f0, #cbd5e0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .movie-poster::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to top, rgba(255,255,255,1), rgba(255,255,255,0));
+        }
+
+        .movie-info {
+            padding: var(--chakra-space-6);
+        }
+
+        .movie-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--chakra-colors-gray-800);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .info-card {
+            background: var(--chakra-colors-gray-100);
+            border-radius: var(--chakra-radii-md);
+            padding: 12px;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #718096;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .seats-card {
+            background: var(--chakra-colors-gray-100);
+            border-radius: var(--chakra-radii-md);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .seats-label {
+            font-size: 0.875rem;
+            color: #718096;
+            margin-bottom: 8px;
+        }
+
+        .seats-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--chakra-colors-purple-500);
+        }
+
+        .barcode {
+            text-align: center;
+            padding: 16px;
+            background: var(--chakra-colors-gray-100);
+            border-top: 1px dashed #cbd5e0;
+            font-family: 'Libre Barcode 128', cursive;
+            font-size: 42px;
+            letter-spacing: 1px;
+        }
+
+        .footer {
+            padding: 16px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #718096;
+            background: var(--chakra-colors-gray-50);
+        }
+    </style>
+</head>
+<body>
+    <div class="ticket">
+        <div class="header">
+            <div class="cinema-brand">CINE CINEMA</div>
+            <div class="region-badge">{{ region }}</div>
+        </div>
+
+        <div class="movie-poster">
+            <div class="movie-title">{{ movie_title }}</div>
+        </div>
+
+        <div class="movie-info">
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-label">Кинотеатр</div>
+                    <div class="info-value">{{ branch_name }}</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Дата</div>
+                    <div class="info-value">{{ showtime_date }}</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Адрес</div>
+                    <div class="info-value">{{ branch_address }}</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Время</div>
+                    <div class="info-value">{{ showtime_time }}</div>
+                </div>
+            </div>
+
+            <div class="seats-card">
+                <div class="seats-label">Ваши места</div>
+                <div class="seats-value">{{ seats|join(', ') }}</div>
+            </div>
+        </div>
+
+        <div class="barcode">t{{ range(1, 10)|random }}k{{ range(1000, 9999)|random }}t</div>
+
+        <div class="footer">
+            Билет действителен при предъявлении QR-кода • Предъявите на входе
+        </div>
+    </div>
+</body>
+</html>

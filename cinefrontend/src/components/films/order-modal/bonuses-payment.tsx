@@ -12,6 +12,7 @@ import {
   Flex,
   Separator,
   chakra,
+  FormatNumber,
 } from "@chakra-ui/react";
 import { useUnit } from "effector-react";
 import {
@@ -63,7 +64,7 @@ export function BonusesPayment({ totalPrice, onSubmit }: BonusesPaymentProps) {
             <Separator direction="row" borderStyle="dashed" flex="1" />
             <Badge colorPalette="green" size="lg">
               <FaCoins />
-              {bonusInfo?.currentBonuses!}
+              <FormatNumber value={bonusInfo?.currentBonuses! / 100} />
             </Badge>
           </HStack>
         </Flex>

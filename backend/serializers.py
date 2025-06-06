@@ -275,7 +275,7 @@ class CreditCardData(BaseModel):
 class PaymentDataType(BaseModel):
     """Модель данных платежа."""
 
-    payment_method: typing.Literal["card", "cash", "bonuses"] = pydantic.Field(
+    payment_method: models.PaymentMethods = pydantic.Field(
         alias="paymentMethod",
         title="Способ оплаты",
     )

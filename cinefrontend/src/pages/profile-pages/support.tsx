@@ -162,39 +162,19 @@ const messagesList: MessagesProps["messages"] = [
     dateTime: "2025-05-17 22:44:10",
   },
   {
-    isMine: true,
-    text: "Как дела твои?",
-    dateTime: "2025-05-17 22:44:20",
-  },
-  {
-    isMine: true,
-    text: "Что делаешь?",
-    dateTime: "2025-05-17 22:44:30",
-  },
-  {
     isMine: false,
     text: "Привет, мир!!!",
     dateTime: "2025-05-17 23:44:40",
   },
   {
-    isMine: false,
-    text: "Все чики пики",
-    dateTime: "2025-05-17 23:44:50",
-  },
-  {
-    isMine: false,
-    text: "Нахуя я сам с собой переписываюсь.",
-    dateTime: "2025-05-17 23:44:55",
-  },
-  {
     isMine: true,
-    text: "Вот так вот и бывает, когда друзей нет :(",
-    dateTime: "2025-05-18 22:44:14",
+    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    dateTime: "2025-05-17 23:44:40",
   },
   {
-    isMine: true,
-    text: "Переночевав в гостинице в Гуаякиле, мы сели к агенту в машину и поехали на судно в Пуэрто Боливар. Доехали вопреки ожиданиям быстро, примерно за 3-4 часа. Погода была пасмурная и даже не смотря на то, что мы находимся недалеко от экватора, было прохладно. Почти все время, пока мы ехали, по обе стороны дороги были банановые плантации, но все равно в голове не укладывается: эти бананы грузят на суда в нескольких портах Эквадора десятками тысяч тонн каждый день, круглый год. Это ж несчастные бананы должны расти быстрее чем грибы.",
-    dateTime: "2025-05-18 22:44:00",
+    isMine: false,
+    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+    dateTime: "2025-05-17 23:44:40",
   },
 ];
 

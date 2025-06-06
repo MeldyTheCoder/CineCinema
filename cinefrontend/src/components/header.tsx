@@ -1,46 +1,30 @@
 import {
-  Container,
-  Tabs,
-  Heading,
-  Text,
   Flex,
-  Input,
   Bleed,
-  Card,
   chakra,
-  SimpleGrid,
   GridItem,
   Link,
+  useBreakpoint,
+  useBreakpointValue,
   Image,
-  Button,
+  Box,
 } from "@chakra-ui/react";
 import { Avatar } from "./ui/avatar";
 import { BsGeoAltFill } from "react-icons/bs";
 import { useStoreMap, useUnit } from "effector-react";
-import { $tokenData, logoutFx, $user } from "../effector/users.store";
+import { $tokenData, $user } from "../effector/users.store";
 import { $selectedRegion } from "../effector/regions.store";
 import { useNavigate } from "react-router-dom";
 import { OfficesPopover } from "./regions-popover";
 import { useMemo } from "react";
 import Logo from "../assets/logo.svg";
-
-const HeaderTab = chakra(Tabs.Trigger, {
-  base: {
-    color: "white",
-  },
-});
-
-const TabText = chakra(
-  Text,
-  { base: { textTransform: "uppercase" } },
-  { defaultProps: { fontSize: "18px" } }
-);
+import LogoMobile from "../assets/logo-mobile.svg";
 
 const HeaderContainer = chakra(
   "div",
   {
     base: {
-      padding: {md: "1rem 3rem", sm: '1rem 0'},
+      padding: { md: "1rem 3rem", sm: "1rem 0" },
       alignItems: "center",
       marginBottom: "1rem",
       _open: { animation: "fade-in 300ms ease-out" },
@@ -55,18 +39,26 @@ const HeaderContainer = chakra(
 
 type HeaderProps = {
   readonly transparent?: boolean;
+  readonly extraRender?: React.ReactNode;
 };
 
 export function HeaderLogo() {
+  const breakpoint = useBreakpointValue({
+    base: 'base',
+    lg: 'lg',
+  });
+
   return (
-    <img
-      src={Logo}
-      style={{ width: "200px", height: "50px", objectFit: "cover" }}
+    <Image
+      src={breakpoint === 'base' ? LogoMobile : Logo}
+      width={{ base: "70px", sm: 150, lg: 200 }}
+      height={{ base: "70px", sm: 35, lg: 50 }}
+      objectFit="cover"
     />
   );
 }
 
-export function Header({ transparent }: HeaderProps) {
+export function Header({ transparent, extraRender }: HeaderProps) {
   const navigate = useNavigate();
   const [selectedRegion] = useUnit([$selectedRegion]);
   const isAuthorized = useStoreMap($tokenData, (state) => !!state.accessToken);
@@ -78,6 +70,10 @@ export function Header({ transparent }: HeaderProps) {
 
   const handleProfileNavigate = () => {
     navigate("/profile/");
+  };
+
+  const handleIndexNavigate = () => {
+    navigate("/");
   };
 
   const headerProps = useMemo(() => {
@@ -93,48 +89,48 @@ export function Header({ transparent }: HeaderProps) {
   }, [transparent]);
 
   return (
-    <Bleed>
-      <HeaderContainer
-        animationStyle={{ _open: "slide-fade-in", _closed: "slide-fade-out" }}
-        data-status="active"
-        {...headerProps}
-      >
-        <Flex justifyContent="space-between" alignItems="center">
-          <GridItem
-            colSpan={{ lg: 3, base: 3 }}
-            gap={5}
-            display="flex"
-            animationStyle={{
-              _open: "slide-fade-in",
-              _closed: "slide-fade-out",
-            }}
-          >
+    <HeaderContainer
+      animationStyle={{ _open: "slide-fade-in", _closed: "slide-fade-out" }}
+      data-status="active"
+      paddingY={{lg: "20px", base: '5px'}}
+      paddingX={{base: "20px", lg: '50px'}}
+      {...headerProps}
+    >
+      <Flex justifyContent="space-between" alignItems="center">
+        <GridItem
+          colSpan={{ lg: 3, base: 3 }}
+          gap={{lg: 5, base: '3px'}}
+          display="flex"
+          animationStyle={{
+            _open: "slide-fade-in",
+            _closed: "slide-fade-out",
+          }}
+        >
+          <div onClick={handleIndexNavigate}>
             <HeaderLogo />
-            <OfficesPopover>
-              <Link variant="underline">
-                <BsGeoAltFill /> {selectedRegion?.title}
-              </Link>
-            </OfficesPopover>
-          </GridItem>
+          </div>
+          <OfficesPopover>
+            <Link variant="underline">
+              <BsGeoAltFill /> {selectedRegion?.title}
+            </Link>
+          </OfficesPopover>
+        </GridItem>
 
-          {isAuthorized && user ? (
-            <GridItem colSpan={{ base: 4 }} marginLeft="auto">
-              <Avatar
-                size="xl"
-                onClick={handleProfileNavigate}
-                src={`http://localhost:8080/media/${user.avatar}`}
-              />
-            </GridItem>
-          ) : (
-            <GridItem colSpan={{ base: 4 }} marginLeft="auto">
-              <Avatar
-                size="xl"
-                onClick={handleLogin}
-              />
-            </GridItem>
-          )}
-        </Flex>
-      </HeaderContainer>
-    </Bleed>
+        {isAuthorized && user ? (
+          <GridItem colSpan={{ base: 4 }} marginLeft="auto">
+            <Avatar
+              size="xl"
+              onClick={handleProfileNavigate}
+              src={`http://localhost:8080/media/${user.avatar}`}
+            />
+          </GridItem>
+        ) : (
+          <GridItem colSpan={{ base: 4 }} marginLeft="auto">
+            <Avatar size="xl" onClick={handleLogin} />
+          </GridItem>
+        )}
+        {!!extraRender && <Box marginLeft="7px">{extraRender!}</Box>}
+      </Flex>
+    </HeaderContainer>
   );
 }

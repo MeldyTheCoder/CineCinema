@@ -10,15 +10,15 @@ const ImageContainer = chakra(Card.Root, {
   base: {
     position: "relative",
     borderRadius: "md",
-    width: {base: '100%', lg: "510px"},
-    height: {base: 'auto', lg: "350px"},
+    width: {base: '100%', lg: "510px", xl: '510px'},
+    height: {base: 'auto', lg: "350px", xl: '350px'},
   },
 });
 
 const DescriptionsContent = chakra("div", {
   base: {
     position: "absolute",
-    top: "80%",
+    top: "75%",
     left: "5%",
   },
 });

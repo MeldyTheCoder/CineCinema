@@ -92,11 +92,12 @@ export function BonusLogsList({ logs }: BonusLogsListProps) {
 
 export function BonusesHelperCards() {
   return (
-    <Flex justify="space-between" gap={5}>
+    <Flex justify="space-between" gap={{lg: 5, base: 3}} wrap={{base: "wrap", lg: 'nowrap'}}>
       <Card.Root
         flexDirection="row"
         overflow="hidden"
         maxW="xl"
+        w={{base: '100%', lg: 'auto'}}
         alignItems="center"
         paddingLeft="20px"
         bg="gray.900"
@@ -115,6 +116,7 @@ export function BonusesHelperCards() {
         flexDirection="row"
         overflow="hidden"
         maxW="xl"
+        w={{base: '100%', lg: 'auto'}}
         alignItems="center"
         paddingLeft="20px"
         bg="gray.900"
@@ -133,6 +135,7 @@ export function BonusesHelperCards() {
         flexDirection="row"
         overflow="hidden"
         maxW="xl"
+        w={{base: '100%', lg: 'auto'}}
         alignItems="center"
         paddingLeft="20px"
         bg="gray.900"

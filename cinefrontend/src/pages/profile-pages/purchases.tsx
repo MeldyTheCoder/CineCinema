@@ -21,15 +21,18 @@ import {
   DataList,
   Input,
   SegmentGroup,
-  Bleed,
 } from "@chakra-ui/react";
 import { useUnit } from "effector-react";
 import {
   $orders,
   $ordersLoading,
   addLocalOrderFx,
+  printOrderTicketFx,
+  printOrderReceiptFx,
   AddLocalOrderRequest,
   loadUserOrdersFx,
+  refundOrderFx,
+  cancelOrderFx,
 } from "../../effector/orders.store";
 import { useEffect, useMemo, useState } from "react";
 import { getByDayId, getTimeFromSeconds } from "../../utils/dates";
@@ -43,8 +46,9 @@ import { LuSearch } from "react-icons/lu";
 import { InputGroup } from "../../components/ui/input-group.tsx";
 import { FaPlus } from "react-icons/fa6";
 import { AddLocalOrderModal } from "../../components/profile/add-local-order-modal.tsx";
-import { toaster } from "../../components/ui/toaster.tsx";
+import { toaster } from "../../components/ui/toaster";
 import { FaCrown } from "react-icons/fa";
+import { Avatar } from "../../components/ui/avatar.tsx";
 
 const Divider = chakra(Separator, {
   base: {
@@ -76,9 +80,9 @@ const OrderPositionSpan = chakra(
 
 function switchSeatBadgeByType(type: TSeatType) {
   const commonProps = {
-    width: '100%',
-    borderTopRadius: '10px',
-    borderBottomRadius: '0',
+    width: "100%",
+    borderTopRadius: "10px",
+    borderBottomRadius: "0",
   };
 
   switch (type) {
@@ -155,7 +159,13 @@ export function SeatCard({
     <Card.Root gap="1px" borderRadius="10px" variant="elevated">
       <Card.Header padding={0}>{switchSeatBadgeByType(seat.type)}</Card.Header>
 
-      <Flex gap="2px" paddingX="10px" paddingY="5px" direction="column" align="center">
+      <Flex
+        gap="2px"
+        paddingX="10px"
+        paddingY="5px"
+        direction="column"
+        align="center"
+      >
         <Text fontStyle="xs">
           {seat.row} ряд {seat.column} место
         </Text>
@@ -179,27 +189,106 @@ export function OrderCard({ order }: { readonly order: TOrder }) {
     [order.status]
   );
 
+  const handleTicketPrint = () => {
+    printOrderTicketFx({ orderId: order.id }).then((html) => {
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Билет_${order.schedule.film.title}_${getByDayId(
+        order.schedule.dayId,
+        order.schedule.year
+      ).format("DD-MM-YYYY")}-${getTimeFromSeconds(order.schedule.time)}.html`;
+      document.body.appendChild(a);
+      a.click();
+
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    });
+  };
+
+  const handleReceiptPrint = () => {
+    printOrderReceiptFx({ orderId: order.id }).then((html) => {
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Чек_${order.schedule.film.title}_${getByDayId(
+        order.schedule.dayId,
+        order.schedule.year
+      ).format("DD-MM-YYYY")}-${getTimeFromSeconds(order.schedule.time)}.html`;
+      document.body.appendChild(a);
+      a.click();
+
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    });
+  };
+
+  const handleRefund = () => {
+    refundOrderFx({ orderId: order.id }).then((order) =>
+      toaster.create({
+        title: "Возврат средств",
+        description: (
+          <>
+            Возврат средств за заказ "{order.schedule.film.title} был успешно
+            оформлен.
+          </>
+        ),
+        type: "success",
+      })
+    );
+  };
+
+  const handleCancel = () => {
+    cancelOrderFx({ orderId: order.id }).then((order) => {
+      toaster.create({
+        title: "Отмена заказа",
+        description: (
+          <>Заказ "{order.schedule.film.title}" был успешно отменен.</>
+        ),
+        type: "success",
+      });
+    });
+  };
+
   const actionButtons: React.ReactNode[] = useMemo(() => {
+    const EMPTY_ACTIONS = (
+      <Text color="gray.500" fontStyle="revert">
+        Нет доступных действий
+      </Text>
+    );
+
     const CANCEL = (
-      <Button variant="subtle" colorPalette="red">
+      <Button variant="subtle" colorPalette="red" onClick={handleCancel}>
         <TbCancel />
         Отменить
       </Button>
     );
     const PRINT_RECEIPT = (
-      <Button variant="subtle">
+      <Button variant="subtle" onClick={handleReceiptPrint}>
         <IoReceiptOutline />
         Распечатать чек
       </Button>
     );
     const PRINT_TICKET = (
-      <Button colorPalette="purple" variant="subtle">
+      <Button
+        colorPalette="purple"
+        variant="subtle"
+        onClick={handleTicketPrint}
+      >
         <IoTicketOutline />
         Распечатать билет
       </Button>
     );
     const REFUND = (
-      <Button colorPalette="orange" variant="subtle">
+      <Button colorPalette="orange" variant="subtle" onClick={handleRefund}>
         <TbCreditCardRefund />
         Оформить возврат
       </Button>
@@ -215,22 +304,22 @@ export function OrderCard({ order }: { readonly order: TOrder }) {
       case OrderStatuses.COMPLETE:
         return [PRINT_RECEIPT, REFUND];
       case OrderStatuses.CANCELED:
-        return [REFUND];
+        return [EMPTY_ACTIONS];
 
       case OrderStatuses.NOT_PAID:
         return [PAY, CANCEL];
 
       case OrderStatuses.POSTPONED:
-        return [PRINT_TICKET, PRINT_RECEIPT, CANCEL];
+        return [PRINT_TICKET, PRINT_RECEIPT, REFUND];
 
       case OrderStatuses.PAID:
-        return [PRINT_TICKET, PRINT_RECEIPT, CANCEL];
+        return [PRINT_TICKET, PRINT_RECEIPT, REFUND];
 
       case OrderStatuses.REFUND:
         return [PRINT_RECEIPT];
 
       default:
-        return [];
+        return [EMPTY_ACTIONS];
     }
   }, [order.status]);
 
@@ -245,15 +334,22 @@ export function OrderCard({ order }: { readonly order: TOrder }) {
         src={film.coverUrl}
         objectFit="cover"
         aspectRatio="1x2"
-        width={230}
+        width={{ lg: 230, base: 100 }}
         height="inherit"
         borderLeftRadius="15px"
+        display={{ base: "none", lg: "flex" }}
       />
 
       <Box width="100%">
         <Card.Header>
           <Flex alignItems="start" gap={2} direction="column">
             <HStack gap={5} alignItems="start">
+              <Avatar
+                src={film.coverUrl}
+                width={75}
+                height={75}
+                display={{ base: "flex", lg: "none" }}
+              />
               <VStack gap={2} alignItems="start">
                 <Text textStyle="2xl" fontWeight="bold">
                   {film.title}
@@ -280,7 +376,7 @@ export function OrderCard({ order }: { readonly order: TOrder }) {
         <Card.Body paddingY={0}>
           <VStack alignItems="start" gap="15px">
             <HStack gapX={10} gapY={5} wrap="wrap">
-              <DataList.Root size="md">
+              <DataList.Root>
                 <DataList.Item>
                   <DataList.ItemLabel>Статус</DataList.ItemLabel>
                   <DataList.ItemValue>
@@ -294,7 +390,7 @@ export function OrderCard({ order }: { readonly order: TOrder }) {
                 </DataList.Item>
               </DataList.Root>
 
-              <DataList.Root size="md">
+              <DataList.Root>
                 <DataList.Item>
                   <DataList.ItemLabel>Дата сеанса</DataList.ItemLabel>
                   <DataList.ItemValue>
@@ -307,7 +403,7 @@ export function OrderCard({ order }: { readonly order: TOrder }) {
                 </DataList.Item>
               </DataList.Root>
 
-              <DataList.Root size="md">
+              <DataList.Root>
                 <DataList.Item>
                   <DataList.ItemLabel>Филиал</DataList.ItemLabel>
                   <DataList.ItemValue>
@@ -317,7 +413,7 @@ export function OrderCard({ order }: { readonly order: TOrder }) {
                 </DataList.Item>
               </DataList.Root>
 
-              <DataList.Root size="md">
+              <DataList.Root>
                 <DataList.Item>
                   <DataList.ItemLabel>Зал</DataList.ItemLabel>
                   <DataList.ItemValue>
@@ -331,19 +427,21 @@ export function OrderCard({ order }: { readonly order: TOrder }) {
 
         <Divider />
 
-        <Group marginX="20px">
-          {order.seats.map((seat) => (
-            <SeatCard seat={seat} order={order} />
-          ))}
-        </Group>
+        <Box overflowX="auto">
+          <Group marginX="20px">
+            {order.seats.map((seat) => (
+              <SeatCard seat={seat} order={order} />
+            ))}
+          </Group>
+        </Box>
 
         <Divider />
- 
+
         <Card.Footer justifyContent="space-between">
           <Group>{actionButtons.map((button) => button)}</Group>
           <VStack gap="0px">
             <OrderPriceLabel>{order.price / 100} ₽</OrderPriceLabel>
-            <OrderPositionSpan>
+            <OrderPositionSpan display={{ base: "none", lg: "flex" }}>
               {order.seats.length} шт. x {order.price / 100} ₽
             </OrderPositionSpan>
           </VStack>
@@ -393,7 +491,11 @@ export function ProfilePurchases() {
   return (
     <Flex gap="20px">
       <VStack gap={5} width="100%">
-        <Card.Root borderRadius="15px" width="100%" padding="30px">
+        <Card.Root
+          borderRadius="15px"
+          width="100%"
+          padding={{ lg: "30px", base: "10px" }}
+        >
           <Wrap gap={5} direction="row">
             <Group width="100%">
               <InputGroup startElement={<LuSearch />} flex="1">
@@ -415,13 +517,15 @@ export function ProfilePurchases() {
               </AddLocalOrderModal>
             </Group>
 
-            <SegmentGroup.Root
-              value={status}
-              onValueChange={(value) => setStatus(value.value)}
-            >
-              <SegmentGroup.Indicator />
-              <SegmentGroup.Items items={orderStatusesItems} />
-            </SegmentGroup.Root>
+            <Box overflowX="auto">
+              <SegmentGroup.Root
+                value={status}
+                onValueChange={(value) => setStatus(value.value)}
+              >
+                <SegmentGroup.Indicator />
+                <SegmentGroup.Items items={orderStatusesItems} />
+              </SegmentGroup.Root>
+            </Box>
           </Wrap>
         </Card.Root>
 

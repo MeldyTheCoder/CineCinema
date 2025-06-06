@@ -36,6 +36,7 @@ import { PaymentStage } from "./payment-stage";
 import { toaster } from "../../ui/toaster";
 import { useForm, useStore } from "@tanstack/react-form";
 import { createOrderFx } from "../../../effector/orders.store";
+import { useNavigate } from "react-router-dom";
 
 type MakeOrderModalProps = {
   readonly schedule?: TSchedule;
@@ -98,6 +99,7 @@ function SeatsPrice({ schedule, seats }: any) {
 }
 
 export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
+  const navigate = useNavigate();
   const form = useForm({
     defaultValues: {
       seats: [],
@@ -141,7 +143,7 @@ export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
       schedule: schedule.id,
       seats: seats.map((seat_) => seat_.id),
       paymentData,
-    }).then((response) => console.log(response));
+    }).then(({payment}) => navigate(`/redirect/payment/${payment.id}`));
   };
 
   const items = [

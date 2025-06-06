@@ -25,6 +25,8 @@ import {
   Text,
   Center,
   Spinner,
+  Grid,
+  GridItem,
 } from "@chakra-ui/react";
 import { TFilmAttachment, TSchedule, TSeat } from "../types";
 import { GenresTags } from "../components/films/genres-tags";
@@ -45,7 +47,7 @@ const FilmTrailerContainer = chakra("div", {
   base: {
     position: "relative",
     width: "100%",
-    height: "290px",
+    height: {lg: "290px", base: "150px"},
     bg: "gray.800",
   },
 });
@@ -54,7 +56,7 @@ const FilmTrailerPlayer = chakra("video", {
   base: {
     position: "absolute",
     width: "inherit",
-    height: "390px",
+    height: {lg: "390px", base: '270px'},
     objectFit: "cover",
     filter: "blur(5px)" /* Уровень размытия */,
     transform: "scale(1.01)" /* Компенсация краевого эффекта */,
@@ -139,8 +141,8 @@ export function FilmNew() {
 
   const handleCloseOrderDialog = () => {
     setSelectedSchedule(null);
-    setSearchParams('scheduleId', undefined);
-  }
+    setSearchParams("scheduleId", undefined);
+  };
 
   useEffect(() => {
     if (!filmId) {
@@ -169,7 +171,6 @@ export function FilmNew() {
       return;
     }
 
-    console.log(selectedScheduleByQuery);
     setSelectedSchedule(selectedScheduleByQuery);
   }, [scheduleId, schedule]);
 
@@ -183,100 +184,118 @@ export function FilmNew() {
       <PageBody>
         <Container>
           <Stack gap="3rem">
-            <HStack gap={10}>
-              <Skeleton
-                loading={filmLoading}
-                width={250}
-                aspectRatio="portrait"
-              >
-                <Image src={film?.coverUrl} width={250} />
-              </Skeleton>
-              <Flex direction="column" gap={8}>
-                <Flex direction="column" gap={2}>
-                  <Skeleton loading={filmLoading} asChild minHeight={11}>
-                    <Heading size="4xl">{film?.title}</Heading>
-                  </Skeleton>
-
-                  <Skeleton
-                    loading={filmLoading}
-                    minHeight={5}
-                    minWidth={70}
-                    colorPalette="green"
-                  >
-                    <Group>
-                      <GenresTags genres={film?.genres || []} />
-                      <Badge
-                        background="gray.800"
-                        colorPalette="gray"
-                        borderRadius="lg"
-                      >
-                        {film?.ageRestriction}+
-                      </Badge>
-                    </Group>
-                  </Skeleton>
-                </Flex>
-
-                <DataList.Root
-                  flexDirection="row"
-                  flexWrap="wrap"
-                  gapX={10}
-                  size="lg"
+            <Grid templateColumns="repeat(4, 1fr)" gapX={5} gapY={0}>
+              <GridItem colSpan={{lg: 1, base: 4}} width="fit-content">
+                <Skeleton
+                  loading={filmLoading}
+                  width={{ lg: 250, base: "65%" }}
+                  height={{lg: 383, base: 'auto'}}
+                  aspectRatio="portrait"
+                  borderRadius="10px"
+                  justifySelf={{base: "center", lg: 'start'}}
                 >
-                  <DataList.Item key="1">
-                    <DataList.ItemLabel>Продолжительность</DataList.ItemLabel>
-                    <DataList.ItemValue>
-                      <Skeleton loading={filmLoading} minWidth={150}>
-                        {formatDuration(film?.durationSeconds || 0)}
-                      </Skeleton>
-                    </DataList.ItemValue>
-                  </DataList.Item>
+                  <Image
+                    src={film?.coverUrl}
+                    width="100%"
+                    height="auto"
+                    borderRadius="10px"
+                    
+                  />
+                </Skeleton>
+              </GridItem>
 
-                  <DataList.Item key="2">
-                    <DataList.ItemLabel>Рейтинг IMDb</DataList.ItemLabel>
-                    <DataList.ItemValue>
-                      <Skeleton loading={filmLoading} minWidth={50}>
-                        {film?.rating}
-                      </Skeleton>
-                    </DataList.ItemValue>
-                  </DataList.Item>
+              <GridItem colSpan={{lg: 3, base: 4}} marginTop={{lg: "7rem", base: "2rem"}}>
+                <Flex direction="column" gap={8}>
+                  <Flex direction="column" gap={2}>
+                    <Skeleton loading={filmLoading} asChild minHeight={11} alignSelf={{base: 'center', lg: 'start'}}>
+                      <Heading size="4xl">{film?.title}</Heading>
+                    </Skeleton>
 
-                  <DataList.Item key="3">
-                    <DataList.ItemLabel>Режисер</DataList.ItemLabel>
-                    <DataList.ItemValue>
-                      <Skeleton loading={filmLoading} minWidth={50}>
-                        {film?.director || " - "}
-                      </Skeleton>
-                    </DataList.ItemValue>
-                  </DataList.Item>
+                    <Skeleton
+                      loading={filmLoading}
+                      minHeight={5}
+                      minWidth={70}
+                      colorPalette="green"
+                      alignSelf={{base: 'center', lg: 'start'}}
+                    >
+                      <Group>
+                        <GenresTags genres={film?.genres || []} />
+                        <Badge
+                          background="gray.800"
+                          colorPalette="gray"
+                          borderRadius="lg"
+                        >
+                          {film?.ageRestriction}+
+                        </Badge>
+                      </Group>
+                    </Skeleton>
+                  </Flex>
 
-                  <DataList.Item key="4">
-                    <DataList.ItemLabel>Дата проката</DataList.ItemLabel>
-                    <DataList.ItemValue>
-                      <Skeleton loading={filmLoading} minWidth={48}>
-                        с {dayjs(film?.activeDateFrom).format("DD MMMM")} по{" "}
-                        {dayjs(film?.activeDateTo).format("DD MMMM")}
-                      </Skeleton>
-                    </DataList.ItemValue>
-                  </DataList.Item>
+                  <DataList.Root
+                    flexDirection="row"
+                    flexWrap="wrap"
+                    gapX={10}
+                    size={{ lg: "lg", base: "sm" }}
+                    display={{base: 'none', md: 'flex'}}
+                  >
+                    <DataList.Item key="1">
+                      <DataList.ItemLabel>Продолжительность</DataList.ItemLabel>
+                      <DataList.ItemValue>
+                        <Skeleton loading={filmLoading} minWidth={150}>
+                          {formatDuration(film?.durationSeconds || 0)}
+                        </Skeleton>
+                      </DataList.ItemValue>
+                    </DataList.Item>
 
-                  <DataList.Item key="5">
-                    <DataList.ItemLabel>Актеры</DataList.ItemLabel>
-                    <DataList.ItemValue>
-                      <Skeleton loading={actorsLoading} minWidth={120}>
-                        {actors?.length > 0
-                          ? actors
-                              .map(
-                                (filmActor) =>
-                                  `${filmActor.actor.firstName} ${filmActor.actor.lastName}`
-                              )
-                              .join(", ")
-                          : "-"}
-                      </Skeleton>
-                    </DataList.ItemValue>
-                  </DataList.Item>
-                </DataList.Root>
-              </Flex>
-            </HStack>
+                    <DataList.Item key="2">
+                      <DataList.ItemLabel>Рейтинг IMDb</DataList.ItemLabel>
+                      <DataList.ItemValue>
+                        <Skeleton loading={filmLoading} minWidth={50}>
+                          {film?.rating}
+                        </Skeleton>
+                      </DataList.ItemValue>
+                    </DataList.Item>
+
+                    <DataList.Item key="3">
+                      <DataList.ItemLabel>Режисер</DataList.ItemLabel>
+                      <DataList.ItemValue>
+                        <Skeleton loading={filmLoading} minWidth={50}>
+                          {film?.director || " - "}
+                        </Skeleton>
+                      </DataList.ItemValue>
+                    </DataList.Item>
+
+                    <DataList.Item key="4">
+                      <DataList.ItemLabel>Дата проката</DataList.ItemLabel>
+                      <DataList.ItemValue>
+                        <Skeleton loading={filmLoading} minWidth={48}>
+                          с {dayjs(film?.activeDateFrom).format("DD MMMM")} по{" "}
+                          {dayjs(film?.activeDateTo).format("DD MMMM")}
+                        </Skeleton>
+                      </DataList.ItemValue>
+                    </DataList.Item>
+
+                    <DataList.Item key="5">
+                      <DataList.ItemLabel>Актеры</DataList.ItemLabel>
+                      <DataList.ItemValue>
+                        <Skeleton loading={actorsLoading} minWidth={120}>
+                          {actors?.length > 0
+                            ? actors
+                                .slice(0, 2)
+                                .map(
+                                  (filmActor) =>
+                                    `${filmActor.actor.firstName} ${filmActor.actor.lastName}`
+                                )
+                                .join(", ")
+                            : "-"}
+                            {actors?.length > 2 && <Badge marginLeft="5px">+{actors.length - 2}</Badge>}
+                        </Skeleton>
+                      </DataList.ItemValue>
+                    </DataList.Item>
+                  </DataList.Root>
+                </Flex>
+              </GridItem>
+            </Grid>
 
             <ScheduleNew onSelect={handleScheduleSelect} />
 
@@ -297,8 +316,70 @@ export function FilmNew() {
                         ))}
                     </Stack>
                   ) : (
-                    <Text>{film?.description}</Text>
+                    <Text fontSize={{base: "14px", lg: "16px"}}>{film?.description}</Text>
                   )}
+
+                  <DataList.Root
+                    flexDirection="row"
+                    flexWrap="wrap"
+                    gapX={10}
+                    size={{ lg: "lg", base: "md" }}
+                    display={{base: 'flex', md: 'none'}}
+                  >
+                    <DataList.Item key="1">
+                      <DataList.ItemLabel>Продолжительность</DataList.ItemLabel>
+                      <DataList.ItemValue>
+                        <Skeleton loading={filmLoading} minWidth={150}>
+                          {formatDuration(film?.durationSeconds || 0)}
+                        </Skeleton>
+                      </DataList.ItemValue>
+                    </DataList.Item>
+
+                    <DataList.Item key="2">
+                      <DataList.ItemLabel>Рейтинг IMDb</DataList.ItemLabel>
+                      <DataList.ItemValue>
+                        <Skeleton loading={filmLoading} minWidth={50}>
+                          {film?.rating}
+                        </Skeleton>
+                      </DataList.ItemValue>
+                    </DataList.Item>
+
+                    <DataList.Item key="3">
+                      <DataList.ItemLabel>Режисер</DataList.ItemLabel>
+                      <DataList.ItemValue>
+                        <Skeleton loading={filmLoading} minWidth={50}>
+                          {film?.director || " - "}
+                        </Skeleton>
+                      </DataList.ItemValue>
+                    </DataList.Item>
+
+                    <DataList.Item key="4">
+                      <DataList.ItemLabel>Дата проката</DataList.ItemLabel>
+                      <DataList.ItemValue>
+                        <Skeleton loading={filmLoading} minWidth={48}>
+                          с {dayjs(film?.activeDateFrom).format("DD MMMM")} по{" "}
+                          {dayjs(film?.activeDateTo).format("DD MMMM")}
+                        </Skeleton>
+                      </DataList.ItemValue>
+                    </DataList.Item>
+
+                    <DataList.Item key="5">
+                      <DataList.ItemLabel>Актеры</DataList.ItemLabel>
+                      <DataList.ItemValue>
+                        <Skeleton loading={actorsLoading} minWidth={120}>
+                          {actors?.length > 0
+                            ? actors
+                                .map(
+                                  (filmActor) =>
+                                    `${filmActor.actor.firstName} ${filmActor.actor.lastName}`
+                                )
+                                .join(", ")
+                            : "-"}
+                        </Skeleton>
+                      </DataList.ItemValue>
+                    </DataList.Item>
+                  </DataList.Root>
+
                   <Stack direction="row" gap={10} alignItems="center">
                     <Stack direction="column" gap={2}>
                       <Text textStyle="2xl" fontWeight="bold">

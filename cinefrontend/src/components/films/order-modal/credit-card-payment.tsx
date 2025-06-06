@@ -429,7 +429,7 @@ export function CreditCardForm({ totalPrice, onSubmit }: CreditCardFormProps) {
         </GridItem>
 
         <GridItem colSpan={{base: 4, lg: 2}} rowSpan={2} alignItems="end">
-          <Button borderRadius="15px" gap="5px" width="100%">
+          <Button borderRadius="15px" gap="5px" width="100%" onClick={() => form.handleSubmit()}>
             Оплатить <strong>{Math.round(totalPrice / 100)} ₽</strong>
           </Button>
         </GridItem>

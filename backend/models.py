@@ -2,12 +2,14 @@ import datetime
 import enum
 
 import databases
+import fastapi
 import ormar
 import sqlalchemy
 import sqlalchemy_utils
 
 import exceptions
 import fn_utils as dates
+import models
 import settings
 
 if not sqlalchemy_utils.database_exists(settings.DATABASE_URL):
@@ -26,6 +28,7 @@ ormar_config = ormar.OrmarConfig(
     database=database,
 )
 
+
 class AgeRestriction(enum.Enum):
     ZERO_PLUS = 0
     SIX_PLUS = 6
@@ -38,24 +41,39 @@ class SeatType(enum.Enum):
     STANDART = "standart"
     VIP = "vip"
     DISABLED = "disabled"
-    VOID = 'void'
+    VOID = "void"
 
 
 class MimeType(enum.Enum):
     VIDEO = "video"
     PHOTO = "photo"
 
+
 class OrderStatuses(enum.Enum):
-    NOT_PAID = 'not_paid'
-    PAID = 'paid'
-    COMPLETE = 'complete'
-    POSTPONED = 'postponed'
-    CANCELED = 'canceled'
-    REFUND = 'refund'
+    NOT_PAID = "not_paid"
+    PAID = "paid"
+    COMPLETE = "complete"
+    POSTPONED = "postponed"
+    CANCELED = "canceled"
+    REFUND = "refund"
+
 
 class BonusLogType(enum.Enum):
-    DEPOSIT = 'deposit'
-    WITHDRAWAL = 'withdrawal'
+    DEPOSIT = "deposit"
+    WITHDRAWAL = "withdrawal"
+
+
+class PaymentStatuses(str, enum.Enum):
+    PENDING = "pending"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+    REFUNDED = "refunded"
+
+
+class PaymentMethods(enum.Enum):
+    CARD = "card"
+    CASH = "cash"
+    BONUSES = "bonuses"
 
 
 def get_current_time() -> datetime.datetime:
@@ -70,6 +88,7 @@ class BaseOrmarModel(ormar.Model):
     ormar_config = ormar_config.copy(
         abstract=True,
     )
+
 
 class User(BaseOrmarModel):
     ormar_config = ormar_config.copy(
@@ -320,7 +339,7 @@ class Seat(BaseOrmarModel):
         ondelete=ormar.ReferentialAction.CASCADE,
         onupdate=ormar.ReferentialAction.CASCADE,
         nullable=False,
-        related_name='seats',
+        related_name="seats",
     )
 
     price_factor = ormar.Decimal(
@@ -523,7 +542,7 @@ class FilmActor(BaseOrmarModel):
         to=Actor,
         on_delete=ormar.ReferentialAction.CASCADE,
         on_update=ormar.ReferentialAction.CASCADE,
-        related_name="roles"
+        related_name="roles",
     )
 
     film = ormar.ForeignKey(
@@ -537,6 +556,68 @@ class FilmActor(BaseOrmarModel):
         max_length=50,
         nullable=False,
     )
+
+
+class Payment(BaseOrmarModel):
+    ormar_config = ormar_config.copy(tablename="payments")
+
+    id: int = ormar.Integer(primary_key=True, autoincrement=True)
+    amount: int = ormar.Integer(minimum=0, nullable=False)
+    status: PaymentStatuses = ormar.Enum(
+        enum_class=PaymentStatuses, default=PaymentStatuses.PENDING, nullable=False,
+    )
+    payment_method: str = ormar.Enum(enum_class=PaymentMethods, nullable=False)
+    gateway_id: str = ormar.String(max_length=255, nullable=True)
+    created_at: datetime = ormar.DateTime(
+        timezone=True, default=get_current_time, nullable=False,
+    )
+
+    order: Order = ormar.ForeignKey(
+        to=Order,
+        related_name="payments",
+        ondelete=ormar.ReferentialAction.SET_NULL,
+        onupdate=ormar.ReferentialAction.SET_NULL,
+        nullable=True,
+    )
+
+    async def mark_as_paid(self):
+        if self.order.status in [
+            OrderStatuses.PAID,
+            OrderStatuses.REFUND,
+            OrderStatuses.COMPLETE,
+            OrderStatuses.CANCELED,
+        ]:
+            return
+
+        if self.status in [
+            PaymentStatuses.SUCCEEDED,
+            PaymentStatuses.REFUNDED,
+        ]:
+            return
+
+        await self.order.update(status=OrderStatuses.PAID)
+        await self.update(status=PaymentStatuses.SUCCEEDED)
+
+    @property
+    def is_paid(self):
+        return all(
+            [
+                self.status == PaymentStatuses.SUCCEEDED,
+                self.order.status == OrderStatuses.PAID,
+            ]
+        )
+
+    @property
+    def success_url(self):
+        match self.payment_method:
+            case PaymentMethods.CARD:
+                return "/success-payment/"
+            case PaymentMethods.CASH:
+                return "/cash-payment-instruction/"
+            case PaymentMethods.BONUSES:
+                return "/success-payment/"
+
+        return "/"
 
 
 class BonusLogs(BaseOrmarModel):
@@ -563,10 +644,7 @@ class BonusLogs(BaseOrmarModel):
         nullable=False,
     )
 
-    type = ormar.Enum(
-        enum_class=BonusLogType,
-        default=BonusLogType.DEPOSIT
-    )
+    type = ormar.Enum(enum_class=BonusLogType, default=BonusLogType.DEPOSIT)
 
     user = ormar.ForeignKey(
         to=User,
@@ -579,8 +657,11 @@ class BonusLogs(BaseOrmarModel):
         default=get_current_time,
     )
 
+
 @database.transaction()
-async def create_order(schedule: Schedule, seats: list[Seat], user: User):
+async def create_order(
+    schedule: Schedule, seats: list[Seat], user: User, payment_method: PaymentMethods
+):
     """
     Создание заказа на фильм, зал, время и место.
     """
@@ -599,7 +680,9 @@ async def create_order(schedule: Schedule, seats: list[Seat], user: User):
         if seat_unavailable:
             raise exceptions.SEAT_UNAVAILABLE
 
-        total_price += schedule.film.price * schedule.hall.price_factor * seat.price_factor
+        total_price += (
+            schedule.film.price * schedule.hall.price_factor * seat.price_factor
+        )
 
     order = await Order.objects.create(
         schedule=schedule,
@@ -612,14 +695,99 @@ async def create_order(schedule: Schedule, seats: list[Seat], user: User):
     for seat in seats:
         await order.seats.add(seat)
 
-    await BonusLogs.objects.create(
+    payment = await Payment.objects.create(
+        amount=total_price,
+        status=PaymentStatuses.PENDING,
+        payment_method=payment_method,
         order=order,
-        type=BonusLogType.DEPOSIT,
-        bonuses=total_price // 100 * BONUS_LOG_PRICE_PERCENT,
-        user=user,
     )
 
+    return {"order": order, "payment": payment}
+
+
+@database.transaction()
+async def pay_order(payment: Payment, user: User):
+    if (
+        payment.status
+        in [
+            PaymentStatuses.SUCCEEDED,
+            PaymentStatuses.REFUNDED,
+        ]
+        or payment.is_paid
+    ):
+        raise fastapi.HTTPException(
+            detail="Платеж уже закрыт.",
+            status_code=400,
+        )
+
+    if payment.order.status in [
+        OrderStatuses.PAID,
+        OrderStatuses.REFUND,
+        OrderStatuses.COMPLETE,
+        OrderStatuses.CANCELED,
+    ]:
+        raise fastapi.HTTPException(
+            detail="Заказ уже оплачен или закрыт.",
+            status_code=400,
+        )
+
+    if payment.payment_method == PaymentMethods.BONUSES:
+        user_bonuses = await get_user_bonuses_info(user)
+        if user_bonuses["current_bonuses"] < payment.amount:
+            raise fastapi.HTTPException(
+                detail="Недостаточно средств на бонусном балансе пользователя для проведения операции.",
+                status_code=400,
+            )
+
+        await BonusLogs.objects.create(
+            bonuses=payment.amount,
+            type=BonusLogType.WITHDRAWAL,
+            order=payment.order,
+            user=user,
+        )
+
+        await payment.update(status=PaymentStatuses.SUCCEEDED, _columns=["status"])
+        await payment.order.update(status=OrderStatuses.PAID, _columns=["status"])
+
+    elif payment.payment_method == PaymentMethods.CARD:
+        await BonusLogs.objects.create(
+            bonuses=payment.amount // 100 * BONUS_LOG_PRICE_PERCENT,
+            type=BonusLogType.DEPOSIT,
+            order=payment.order,
+            user=user,
+        )
+
+        await payment.update(status=PaymentStatuses.SUCCEEDED, _columns=["status"])
+        await payment.order.update(status=OrderStatuses.PAID, _columns=["status"])
+
+    return payment.success_url
+
+
+@database.transaction()
+async def refund_order(order: Order, user: User):
+    if order.status not in [
+        models.OrderStatuses.PAID,
+        models.OrderStatuses.POSTPONED,
+        models.OrderStatuses.COMPLETE,
+    ]:
+        raise exceptions.ORDER_REFUND_RESTRICTED
+
+    await order.update(status=models.OrderStatuses.REFUND, _columns=["status"])
+    await order.payments.update(
+        status=PaymentStatuses.REFUNDED, _columns=["status"], each=True
+    )
+
+    payment = await order.payments.first()
+    if payment.payment_method == PaymentMethods.BONUSES:
+        await BonusLogs.objects.create(
+            bonuses=payment.amount,
+            type=BonusLogType.DEPOSIT,
+            user=user,
+            order=order,
+        )
+
     return order
+
 
 @database.transaction()
 async def add_local_order(order_id: int, price: int, user: User):
@@ -648,6 +816,42 @@ async def add_local_order(order_id: int, price: int, user: User):
     return order
 
 
+async def get_user_bonuses_info(user: User):
+    deposit_bonuses_sum = (
+        await BonusLogs.objects.filter(type=BonusLogType.DEPOSIT, user__id=user.id).sum(
+            "bonuses"
+        )
+        or 0
+    )
+    withdrawal_bonuses_sum = (
+        await BonusLogs.objects.filter(
+            type=BonusLogType.WITHDRAWAL, user__id=user.id
+        ).sum("bonuses")
+        or 0
+    )
+    current_bonuses = deposit_bonuses_sum - withdrawal_bonuses_sum
+
+    logs = (
+        await BonusLogs.objects.select_related(
+            ["order", "order__schedule__film__genres", "order__seats"]
+        )
+        .filter(
+            user__id=user.id,
+        )
+        .order_by("-date_created")
+        .all()
+    )
+
+    total_xp = sum([log.bonuses // 100 * 2 for log in logs])
+
+    data = {
+        "logs": logs,
+        "level_info": dates.get_level_info(total_xp),
+        "current_bonuses": current_bonuses,
+    }
+    return data
+
+
 async def get_active_schedule_by_id(schedule_id: int):
     """
     Получить активное расписание по его ID
@@ -658,7 +862,8 @@ async def get_active_schedule_by_id(schedule_id: int):
     time = dates.seconds_since_start_of_day(current_date)
 
     schedule = await Schedule.objects.select_related(
-        ['hall', 'film', 'hall__office', 'hall__office__region', 'film__genres']).get_or_none(
+        ["hall", "film", "hall__office", "hall__office__region", "film__genres"]
+    ).get_or_none(
         ormar.or_(
             ormar.and_(
                 day_id__gt=day_id,
@@ -668,7 +873,7 @@ async def get_active_schedule_by_id(schedule_id: int):
                 day_id=day_id,
                 year=year,
                 time__gt=time,
-            )
+            ),
         ),
         hall__active=True,
         id=schedule_id,

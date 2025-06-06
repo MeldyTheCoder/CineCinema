@@ -12,7 +12,7 @@ PRIVATE_KEY = os.getenv("PRIVATE_KEY", "3roighjerugherokfierhguern3425234")
 DATABASE_URL = os.getenv("DATABASE_URL", "mysql://root:1234@127.0.0.1:3307/cine")
 
 # Ссылка на подключение Redis
-REDIS_URL = os.getenv("REDIS_URL", "127.0.0.1:6380")
+REDIS_URL = os.getenv("REDIS_URL", "localhost:6380")
 
 # Режим отладки
 DEBUG = bool(os.getenv("DEBUG", "True"))

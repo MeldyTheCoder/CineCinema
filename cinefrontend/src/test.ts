@@ -79,7 +79,7 @@ const announces: TAnnounce[] = [
     coverUrl:
       "https://platform.vox.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/16221040/parabellumcover.jpg?quality=90&strip=all&crop=7.8362408553742,0,84.327518289252,100",
     title: "Джон Уик",
-    text: "Узнай какого это, когда тебя хуярят обрезом и отрубают палец",
+    text: "Легендарный наемник Джон Уик возвращается.",
     dateCreated: dayjs().format("DD.MM.YYYY"),
     dateCloses: dayjs().format("DD.MM.YYYY"),
     film: films[0],
@@ -88,8 +88,8 @@ const announces: TAnnounce[] = [
     id: 2,
     coverUrl:
       "https://wallpapers.com/images/hd/1920x1080-hd-movie-1920-x-1080-gz4tb89aora60d2b.jpg",
-    title: "Хобби и Ты",
-    text: "Говно какое-то, не не слышали",
+    title: "Мстители",
+    text: "Финальная битва, изменившая историю кино.",
     dateCreated: dayjs().format("DD.MM.YYYY"),
     dateCloses: dayjs().format("DD.MM.YYYY"),
     film: films[0],
@@ -97,8 +97,8 @@ const announces: TAnnounce[] = [
   {
     id: 3,
     coverUrl: "https://wallpapercave.com/wp/wp8525542.jpg",
-    title: "Ну нихуя себе",
-    text: "Вот это пиздец конечно полный.",
+    title: "Поворот судьбы",
+    text: "Каждый поворот сюжета перевернёт ваше восприятие реальности.",
     dateCreated: dayjs().format("DD.MM.YYYY"),
     dateCloses: dayjs().format("DD.MM.YYYY"),
     film: films[0],

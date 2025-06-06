@@ -16,13 +16,6 @@ import { useUnit } from "effector-react";
 import { useEffect, useMemo } from "react";
 import { filterByUnique, stringToColor } from "../utils/arrays";
 import { $films, loadFilmsEv } from "../effector/films.store";
-import {
-  SelectContent,
-  SelectItem,
-  SelectRoot,
-  SelectTrigger,
-  SelectValueText,
-} from "../components/ui/select";
 import Slider from "react-slick";
 import { styled } from "styled-components";
 
@@ -30,7 +23,7 @@ export const StyledSlider = styled(Slider)`
   width: 100%;
 
   .slick-track {
-    height: auto;
+    height: 360px;
   }
 
   .slick-slide {
@@ -57,7 +50,7 @@ export const StyledSlider = styled(Slider)`
 
   @media screen and (max-width: 500px) {
     .slick-track {
-      height: auto;
+      height: 200px;
     }
   }
 `;
@@ -72,7 +65,6 @@ function AnouncesSlider() {
     "2xl": "2xl",
   });
 
-  console.log(breakPoint);
   const settings = {
     dots: true,
     infinite: true,
@@ -133,33 +125,6 @@ export function Index() {
         </Container>
         <Container justifyContent="center">
           <Stack direction="column" gap={10}>
-            <Stack direction="row" gap={10}>
-              <SelectRoot collection={genresCollection} multiple width={350}>
-                <SelectTrigger>
-                  <SelectValueText placeholder="Выберите жанры" />
-                </SelectTrigger>
-                <SelectContent>
-                  {genresCollection.items.map((genre) => (
-                    <SelectItem item={genre} key={genre.id}>
-                      {genre.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </SelectRoot>
-
-              <SelectRoot collection={genresCollection} multiple width={350}>
-                <SelectTrigger>
-                  <SelectValueText placeholder="Выберите жанры" />
-                </SelectTrigger>
-                <SelectContent>
-                  {genresCollection.items.map((genre) => (
-                    <SelectItem item={genre} key={genre.id}>
-                      {genre.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </SelectRoot>
-            </Stack>
             <FilmsList films={films} onFilmClick={handleFilmClick} />
           </Stack>
         </Container>
