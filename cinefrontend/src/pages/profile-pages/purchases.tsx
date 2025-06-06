@@ -21,6 +21,10 @@ import {
   DataList,
   Input,
   SegmentGroup,
+  Dialog,
+  Portal,
+  CloseButton,
+  QrCode,
 } from "@chakra-ui/react";
 import { useUnit } from "effector-react";
 import {
@@ -181,6 +185,40 @@ export function SeatCard({
     </Card.Root>
   );
 }
+export function PaymentModal({
+  order,
+  children,
+}: {
+  readonly order: TOrder;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <Dialog.Root>
+      <Dialog.Trigger asChild>{children}</Dialog.Trigger>
+      <Portal>
+        <Dialog.Backdrop />
+        <Dialog.Positioner>
+          <Dialog.Content>
+            <Dialog.Header>
+              <Dialog.Title>Оплата заказа №{order.id}</Dialog.Title>
+            </Dialog.Header>
+            <Dialog.Body justifyContent="center" alignItems="center" display="flex" flexDirection="column" gap={5}>
+              <QrCode.Root value={JSON.stringify({ orderId: order.id })} size="2xl">
+                <QrCode.Frame>
+                  <QrCode.Pattern />
+                </QrCode.Frame>
+              </QrCode.Root>
+              <Text textStyle="lg">Покажите этот QR-код на кассе кинотеатра</Text>
+            </Dialog.Body>
+            <Dialog.CloseTrigger asChild>
+              <CloseButton size="sm" />
+            </Dialog.CloseTrigger>
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Portal>
+    </Dialog.Root>
+  );
+}
 export function OrderCard({ order }: { readonly order: TOrder }) {
   const film = order.schedule.film;
 
@@ -294,10 +332,12 @@ export function OrderCard({ order }: { readonly order: TOrder }) {
       </Button>
     );
     const PAY = (
-      <Button colorPalette="green" variant="subtle">
-        <CiCreditCard1 />
-        Оплатить
-      </Button>
+      <PaymentModal order={order}>
+        <Button colorPalette="green" variant="subtle">
+          <CiCreditCard1 />
+          Оплатить
+        </Button>
+      </PaymentModal>
     );
 
     switch (order.status) {
