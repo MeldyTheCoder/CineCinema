@@ -791,9 +791,7 @@ async def refund_order(order: Order, user: User):
 
 @database.transaction()
 async def add_local_order(order_id: int, price: int, user: User):
-    """
-    Добавление офлайн-заказа в систему - обновление списка заказа пользователей
-    """
+    """Добавление офлайн-заказа в систему - обновление списка заказа пользователей."""
     order = await Order.objects.get_or_none(
         id=order_id,
         price=price,
