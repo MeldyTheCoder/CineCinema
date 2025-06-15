@@ -9,21 +9,13 @@ router = fastapi.APIRouter(
     prefix="/films",
 )
 
-# FilmResponseModel = models.Film.get_pydantic(
-#     include={
-#         "id",
-#         "title",
-#         "age_restriction",
-#         "genres",
-#         "rating",
-#         "description",
-#         "duration_seconds",
-#         "cover_url",
-#         "price",
-#         "active_date_from",
-#         "active_date_to",
-#     },
-# )
+
+@router.get("/announcements/", name="Вывод всех карточек премьер")
+async def get_announcements():
+    current_date = dates.get_now()
+    return await models.Announcements.objects.filter(
+        date_closes__gte=current_date,
+    ).all()
 
 
 @router.get(
@@ -33,12 +25,17 @@ router = fastapi.APIRouter(
 async def get_films():
     current_date = dates.get_now()
 
-    return await models.Film.objects.filter(
-        active_date_from__lte=current_date,
-        active_date_to__gte=current_date,
-    ).select_related("genres").all()
+    return (
+        await models.Film.objects.filter(
+            active_date_from__lte=current_date,
+            active_date_to__gte=current_date,
+        )
+        .select_related("genres")
+        .all()
+    )
 
-@router.get('/{film_id}/', name="Вывод фильма по ID")
+
+@router.get("/{film_id}/", name="Вывод фильма по ID")
 async def get_film(film_id: int):
     film = await models.Film.objects.select_related(["genres"]).get_or_none(id=film_id)
     if not film:
@@ -46,13 +43,15 @@ async def get_film(film_id: int):
 
     return film
 
-@router.get('/{film_id}/attachments/', name="Вывод списка изображений фильма")
+
+@router.get("/{film_id}/attachments/", name="Вывод списка изображений фильма")
 async def get_film_attachments(film_id: int):
     film = await models.Film.objects.select_related(["genres"]).get_or_none(id=film_id)
     if not film:
         raise exceptions.FILM_NOT_FOUND
 
     return await film.attachments.all()
+
 
 @router.get(
     "/search/",

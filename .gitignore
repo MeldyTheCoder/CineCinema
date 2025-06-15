@@ -5,3 +5,4 @@ documents/venv
 documents/__pycache__
 sms/venv
 sms/__pycache__
+ssl

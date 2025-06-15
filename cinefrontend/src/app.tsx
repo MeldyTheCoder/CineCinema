@@ -1,9 +1,9 @@
 import axios from "axios";
 import { logoutFx } from "./effector/users.store";
 
-const BACKEND_HOST_ENV = import.meta.env.VITE_BACKEND_HOST;
+const IS_PROD = import.meta.env.PROD;
 
-const BASE_URL = BACKEND_HOST_ENV ? `${import.meta.env.VITE_BACKEND_HOST}/api/` : 'http://localhost:8080';
+const BASE_URL = IS_PROD ? `${location.origin}/api/` : 'http://localhost:8080';
 
 export const app = axios.create({
     baseURL: BASE_URL
