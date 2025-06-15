@@ -22,7 +22,7 @@ export const resetHallsEv = createEvent<null>();
 const loadHallsFx = createEffect<HallsRequest, THall[], Error>({
     name: 'loadHallsFx',
     handler: async ({officeId}) => {
-        const response = await app.get<HallsRequest, AxiosResponse<THall[]>>(`/halls/${officeId}`);
+        const response = await app.get<HallsRequest, AxiosResponse<THall[]>>(`/halls/${officeId}/`);
         return camelArray<THall[]>(response.data);
     },
 });

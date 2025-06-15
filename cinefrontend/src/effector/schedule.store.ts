@@ -36,7 +36,7 @@ const loadScheduleFx = createEffect<ScheduleRequest, TSchedule[], Error>({
   name: "loadScheduleFx",
   handler: async (params) => {
     await wait(500);
-    const response = await app.get(`/schedule/?${stringify(params)}`);
+    const response = await app.get(`/schedule/?${stringify(params)}/`);
     return camelArray<TSchedule[]>(response.data);
   },
 });
@@ -58,7 +58,7 @@ export const loadScheduleByIdFx = createEffect<
 export const loadScheduleSeatsFx = createEffect<SeatsRequest, TSeat[], Error>({
     name: 'loadHallSeatsFx',
     handler: async ({scheduleId}) => {
-        const response = await app.get(`/schedule/seats/${scheduleId}`);
+        const response = await app.get(`/schedule/seats/${scheduleId}/`);
         return camelArray<TSeat[]>(response.data);
     }
 })

@@ -1,6 +1,5 @@
 import { createStore, createEffect, createEvent, sample } from "effector";
 import { TAnnounce, TFilm, TFilmAttachment } from "../types";
-import { filmAttachments } from "../test";
 import { app } from "../app";
 import { AxiosResponse } from "axios";
 import {pending} from 'patronum';
@@ -36,7 +35,7 @@ export const loadFilmFx = createEffect<FilmRequest, TFilm, Error>({
     name: 'loadFilmFx',
     handler: async ({filmId}) => {
         await wait(500);
-        const response = await app.get<any, AxiosResponse<TFilm>>(`/films/${filmId}`);
+        const response = await app.get<any, AxiosResponse<TFilm>>(`/films/${filmId}/`);
         return objectToCamelCase<TFilm>(response.data);
     }
 })

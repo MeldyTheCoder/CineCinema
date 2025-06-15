@@ -42,7 +42,7 @@ export const loadUserOrdersFx = createEffect<
         : `/orders/?${stringify({
             ...data,
             status: (data.status as any) === "all" ? undefined : data.status,
-          })}`
+          })}/`
     );
     return camelArray<TOrder[]>(response.data);
   },

@@ -21,7 +21,7 @@ export const setOffice = createEvent<TOffice>();
 export const loadOfficesFx = createEffect<OfficesRequest, TOffice[], Error>({
     name: 'loadOfficesFx',
     handler: async ({regionId}) => {
-        const response = await app.get<any, AxiosResponse<TOffice[]>>(`/regions/${regionId}/offices`);
+        const response = await app.get<any, AxiosResponse<TOffice[]>>(`/regions/${regionId}/offices/`);
         return camelArray<TOffice[]>(response.data);
     }
 })
