@@ -15,6 +15,6 @@ async def get_regions() -> list[models.Region]:
     return await models.Region.objects.select_related("offices").all()
 
 
-@router.get("/{region_id}/offices", name="Вывод всех офисов региона")
+@router.get("/{region_id}/offices/", name="Вывод всех офисов региона")
 async def get_offices(region_id: int):
     return await models.Office.objects.filter(region__id=region_id).all()

@@ -90,7 +90,7 @@ export const payOrderFx = createEffect<{paymentId: number}, string, Error>({
 export const printOrderTicketFx = createEffect<{orderId: number}, string, Error>({
   name: "printOrderTicketFx",
   handler: async ({orderId}) => {
-    const response = await app.get(`/orders/ticket/${orderId}`);
+    const response = await app.get(`/orders/ticket/${orderId}/`);
     return response.data;
   }
 });
@@ -98,7 +98,7 @@ export const printOrderTicketFx = createEffect<{orderId: number}, string, Error>
 export const printOrderReceiptFx = createEffect<{orderId: number}, string, Error>({
   name: "printOrderReceiptFx",
   handler: async ({orderId}) => {
-    const response = await app.get(`/orders/receipt/${orderId}`);
+    const response = await app.get(`/orders/receipt/${orderId}/`);
     return response.data;
   }
 });
@@ -106,7 +106,7 @@ export const printOrderReceiptFx = createEffect<{orderId: number}, string, Error
 export const refundOrderFx = createEffect<{orderId: number}, TOrder, Error>({
   name: 'refundOrderFx',
   handler: async ({orderId}) => {
-    const response = await app.post(`/orders/refund/${orderId}`);
+    const response = await app.post(`/orders/refund/${orderId}/`);
     return objectToCamelCase<TOrder>(response.data);
   }
 });
@@ -114,7 +114,7 @@ export const refundOrderFx = createEffect<{orderId: number}, TOrder, Error>({
 export const cancelOrderFx = createEffect<{orderId: number}, TOrder, Error>({
   name: 'cancelOrderFx',
   handler: async ({orderId}) => {
-    const response = await app.post(`/orders/cancel/${orderId}`);
+    const response = await app.post(`/orders/cancel/${orderId}/`);
     return objectToCamelCase<TOrder>(response.data);
   }
 })

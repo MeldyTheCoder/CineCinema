@@ -15,7 +15,7 @@ router = fastapi.APIRouter(
     tags=["Офисы и регионы"],
 )
 
-@router.post('/create', name="Создание заказа")
+@router.post('/create/', name="Создание заказа")
 async def create_order(user: auth.UserType, form_data: serializers.CreateOrderRequest):
     current_date = dates.get_now()
     day_id = dates.day_of_year(current_date)
