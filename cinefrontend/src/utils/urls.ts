@@ -1,3 +1,5 @@
+import { BASE_URL } from "../app";
+
 export function parseUrl(url: string): string {
   if (
     /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/.test(
@@ -7,5 +9,5 @@ export function parseUrl(url: string): string {
     return url;
   }
 
-  return `http://localhost:8080/media/${url}`;
+  return `${BASE_URL}/media/${url}`;
 }
