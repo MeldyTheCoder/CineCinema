@@ -9,6 +9,7 @@ import { FaMoneyBill } from "react-icons/fa";
 import { LuListOrdered } from "react-icons/lu";
 import { HiSupport } from "react-icons/hi";
 import { Avatar } from "../ui/avatar";
+import { parseUrl } from "../../utils/urls";
 
 export function ProfileDrawer({
   children,
@@ -36,7 +37,7 @@ export function ProfileDrawer({
                     size="xs"
                     src={
                       user
-                        ? `http://localhost:8080/media/${user.avatar}`
+                        ? parseUrl(user.avatar)
                         : undefined
                     }
                   />

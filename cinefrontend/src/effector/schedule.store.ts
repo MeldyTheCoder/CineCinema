@@ -36,7 +36,7 @@ const loadScheduleFx = createEffect<ScheduleRequest, TSchedule[], Error>({
   name: "loadScheduleFx",
   handler: async (params) => {
     await wait(500);
-    const response = await app.get(`/schedule/?${stringify(params)}/`);
+    const response = await app.get(`/schedule/?${stringify(params)}`);
     return camelArray<TSchedule[]>(response.data);
   },
 });

@@ -22,6 +22,7 @@ import LogoMobile from "../assets/logo-mobile.svg";
 import LogoDark from "../assets/logo-dark.svg";
 import LogoMobileDark from "../assets/logo-mobile-dark.svg";
 import { useColorMode } from "./ui/color-mode";
+import { parseUrl } from "../utils/urls";
 
 const HeaderContainer = chakra(
   "div",
@@ -134,7 +135,7 @@ export function Header({ transparent, extraRender }: HeaderProps) {
             <Avatar
               size="xl"
               onClick={handleProfileNavigate}
-              src={`http://localhost:8080/media/${user.avatar}`}
+              src={parseUrl(user.avatar)}
             />
           </GridItem>
         ) : (

@@ -22,6 +22,7 @@ import { IoMdSunny } from "react-icons/io";
 import { HiSupport } from "react-icons/hi";
 import { useColorMode } from "../ui/color-mode.tsx";
 import { MenuButton, NavButton } from "./menu-button.tsx";
+import { parseUrl } from "../../utils/urls.ts";
 
 export function ProfileSidebar() {
   const { toggleColorMode } = useColorMode();
@@ -38,7 +39,7 @@ export function ProfileSidebar() {
           <Avatar
             size="xs"
             src={
-              user ? `http://localhost:8080/media/${user.avatar}` : undefined
+              user ? parseUrl(user.avatar) : undefined
             }
           />
           <Text textStyle="md">{user?.firstName}</Text>

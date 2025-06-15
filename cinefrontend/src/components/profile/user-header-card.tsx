@@ -6,6 +6,7 @@ import { Avatar } from "../ui/avatar";
 import { toaster } from "../ui/toaster";
 import { useEffect } from "react";
 import dayjs from "dayjs";
+import { parseUrl } from "../../utils/urls";
 
 type TUserHeaderCard = {
   readonly disableUploadAvatar?: boolean;
@@ -86,7 +87,7 @@ export function UserHeaderCard({ disableUploadAvatar, user }: TUserHeaderCard) {
         <Avatar
           width={75}
           height={75}
-          src={`http://localhost:8080/media/${user.avatar}`}
+          src={parseUrl(user.avatar)}
         >
           {!disableUploadAvatar && (
             <Float placement="bottom-end" offset={2}>

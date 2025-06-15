@@ -158,7 +158,7 @@ export const editProfileFx = createEffect<TEditProfileRequest, TUser, Error>({
   name: "editProfileFx",
   handler: async (data) => {
     const response = await app.post<any, AxiosResponse<TUser>>(
-      "/users/edit",
+      "/users/edit/",
       data
     );
     return objectToCamelCase<TUser>(response.data);

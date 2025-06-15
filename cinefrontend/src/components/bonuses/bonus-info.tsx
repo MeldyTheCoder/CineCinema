@@ -2,6 +2,7 @@ import { Badge, chakra, FormatNumber, Group, Progress, Stack } from "@chakra-ui/
 import { TBonusResponse, TUser } from "../../types";
 import { Avatar } from "../ui/avatar";
 import { FaCoins, FaLevelUpAlt } from "react-icons/fa";
+import { parseUrl } from "../../utils/urls";
 
 const LevelSpan = chakra("span", {
   base: {
@@ -36,7 +37,7 @@ export function BonusInfo({
       <Avatar
         width={150}
         height={150}
-        src={`http://localhost:8080/media/${user.avatar}`}
+        src={parseUrl(user.avatar)}
         alignSelf="center"
       />
       <FullNameSpan textAlign="center">

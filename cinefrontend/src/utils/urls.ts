@@ -9,5 +9,9 @@ export function parseUrl(url: string): string {
     return url;
   }
 
+  if (url.startsWith('data:')) {
+    return url;
+  }
+
   return `${BASE_URL}/media/${url}`;
 }
