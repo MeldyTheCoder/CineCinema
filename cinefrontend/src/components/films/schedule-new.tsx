@@ -44,12 +44,12 @@ const DayBoxContainer = chakra("div", {
 
 const MapWrapper = styled(Card.Root).attrs({
   variant: "elevated",
+  boxShadow: 'lg',
 })`
   div[dir="ltr"] {
     border-radius: 10px;
   }
   border-radius: 10px;
-  padding: 1px;
 `;
 
 function groupByDate(schedule: TSchedule[]) {
@@ -219,14 +219,6 @@ function OfficeCard({ title, schedule, onScheduleSelect }: OfficeCardProps) {
       direction={{ base: "column", lg: "row" }}
       width="100%"
     >
-      {/* <Image
-        src="https://s.afisha.ru/ms/-D7CB6T-qFwhCjJ54Kt31tNU-E_PAQT3uTBpBPJ4HJM.jpg"
-        aspectRatio="2x1"
-        width={{base: "100%", lg: "300px"}}
-        height="200px"
-        objectFit="cover"
-        borderRadius="15px"
-      /> */}
       <MapWrapper width={{ base: "100%", lg: "300px" }} height="200px">
         <Map
           longitude={35.9242}

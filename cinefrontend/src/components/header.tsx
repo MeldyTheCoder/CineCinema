@@ -19,6 +19,9 @@ import { OfficesPopover } from "./regions-popover";
 import { useMemo } from "react";
 import Logo from "../assets/logo.svg";
 import LogoMobile from "../assets/logo-mobile.svg";
+import LogoDark from "../assets/logo-dark.svg";
+import LogoMobileDark from "../assets/logo-mobile-dark.svg";
+import { useColorMode } from "./ui/color-mode";
 
 const HeaderContainer = chakra(
   "div",
@@ -43,14 +46,24 @@ type HeaderProps = {
 };
 
 export function HeaderLogo() {
+  const {colorMode} = useColorMode();
   const breakpoint = useBreakpointValue({
     base: 'base',
     lg: 'lg',
   });
 
+  const logo = useMemo(() => {
+    switch (colorMode) {
+      case 'dark':
+        return breakpoint === 'base' ? LogoMobile : Logo;
+      case 'light':
+        return breakpoint === 'base' ? LogoMobileDark : LogoDark;
+    }
+  }, [colorMode, breakpoint])
+
   return (
     <Image
-      src={breakpoint === 'base' ? LogoMobile : Logo}
+      src={logo}
       width={{ base: "70px", sm: 150, lg: 200 }}
       height={{ base: "70px", sm: 35, lg: 50 }}
       objectFit="cover"

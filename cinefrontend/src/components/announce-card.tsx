@@ -1,9 +1,11 @@
 import { TAnnounce } from "../types";
 import { chakra, Heading, Text, Image, Card, Badge } from "@chakra-ui/react";
 import { HiStar } from "react-icons/hi"
+import { parseUrl } from "../utils/urls";
 
 type AnnounceCard = {
   readonly announce: TAnnounce;
+  readonly onClick?: (_: TAnnounce) => void;
 };
 
 const ImageContainer = chakra(Card.Root, {
@@ -12,6 +14,8 @@ const ImageContainer = chakra(Card.Root, {
     borderRadius: "md",
     width: {base: '100%', lg: "510px", xl: '510px'},
     height: {base: 'auto', lg: "350px", xl: '350px'},
+    maxWidth: {base: '100%', lg: "510px", xl: '510px'},
+    maxHeight: {base: 'auto', lg: "350px", xl: '350px'},
   },
 });
 
@@ -32,7 +36,7 @@ const NewTag = chakra(
       left: "3%",
     },
   },
-  { defaultProps: { variant: "solid", colorPalette: "blue", children: <><HiStar /> Новинка</>, size: 'lg'} }
+  { defaultProps: { variant: "solid", colorPalette: "orange", children: <><HiStar /> Премьера</>, size: 'lg'} }
 );
 
 const SoonTag = chakra(
@@ -44,24 +48,24 @@ const SoonTag = chakra(
       left: "3%",
     },
   },
-  { defaultProps: { variant: "solid", colorPalette: "orange", children: <><HiStar /> Премьера</>, size: 'lg'} }
+  { defaultProps: { variant: "solid", colorPalette: "blue", children: <><HiStar /> Скоро в прокате</>, size: 'lg'} }
 );
 
-export function AnnounceCard({ announce }: AnnounceCard) {
+export function AnnounceCard({ announce, onClick }: AnnounceCard) {
   return (
-    <ImageContainer transition="scale 0.3s" _hover={{scale: 1.03}}>
+    <ImageContainer transition="scale 0.3s" _hover={{scale: 1.03}} onClick={() => onClick?.(announce)}>
       <Image
-        src={announce.coverUrl}
+        src={parseUrl(announce.coverUrl)}
         width="inherit"
         height="inherit"
         aspectRatio="16x9"
         objectFit="cover"
         borderRadius="inherit"
       />
-      <SoonTag />
+      {!announce.film?.id ? <SoonTag /> : <NewTag />}
       <DescriptionsContent>
-        <Heading>{announce.title}</Heading>
-        <Text>{announce.text}</Text>
+        <Heading color="white">{announce.title}</Heading>
+        <Text color="white">{announce.text}</Text>
       </DescriptionsContent>
     </ImageContainer>
   );

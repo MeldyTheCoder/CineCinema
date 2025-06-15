@@ -1,12 +1,13 @@
-import { Button, chakra, Grid, GridItem, Spinner, Box, VStack } from "@chakra-ui/react";
-import { useUnit } from "effector-react";
 import {
-  $seatsLoading,
-  $seats,
-  loadScheduleSeatsFx,
-} from "../effector/schedule.store";
-import { useCallback, useEffect, useMemo } from "react";
-import { TSeat, TSeatType } from "../types";
+  Button,
+  chakra,
+  Grid,
+  GridItem,
+  Spinner,
+  VStack,
+} from "@chakra-ui/react";
+import { useCallback, useMemo } from "react";
+import { TSeat, TSeatType } from "../../types";
 import { CinemaScreen } from "./cinema-screen";
 import { FaCheck } from "react-icons/fa";
 
@@ -70,34 +71,31 @@ export function Seat({ seat, index, selected }: SeatProps) {
     switch (seatType) {
       case TSeatType.VOID:
         return {
-          visibility: 'hidden',
+          visibility: "hidden",
           children: cellContent,
-        }
+        };
       case TSeatType.DISABLED:
         return {
           disabled: true,
-          colorPalette: 'red',
+          colorPalette: "red",
           children: cellContent,
-        }
+        };
       case TSeatType.STANDART:
         return {
-          colorPalette: 'gray',
+          colorPalette: "gray",
           children: cellContent,
-        }
+        };
       case TSeatType.VIP:
         return {
-          colorPalette: 'yellow',
+          colorPalette: "yellow",
           children: cellContent,
-        }
+        };
       default:
         return null;
     }
   }, [seat, selected]);
 
-  return (
-    <SeatCell {...seatProps} />
-  )
-  
+  return <SeatCell {...seatProps} />;
 }
 
 type SeatsGridProps = {
@@ -107,10 +105,18 @@ type SeatsGridProps = {
   readonly onSeatSelect: (_: TSeat) => void;
 };
 
-export function SeatsGrid({ seats, selected, loading, onSeatSelect }: SeatsGridProps) {
-  const isSelected = useCallback<Function<boolean>>((seat: TSeat) => {
-    return !!selected?.find((seat_) => seat.id === seat_.id)
-  }, [selected]);
+export function SeatsGrid({
+  seats,
+  selected,
+  loading,
+  onSeatSelect,
+}: SeatsGridProps) {
+  const isSelected = useCallback<(_: TSeat) => boolean>(
+    (seat: TSeat) => {
+      return !!selected?.find((seat_) => seat.id === seat_.id);
+    },
+    [selected]
+  );
 
   return loading ? (
     <Spinner />

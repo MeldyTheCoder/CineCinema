@@ -11,7 +11,7 @@ import {
 import { useUnit } from "effector-react";
 import { $user, editProfileFx } from "../../effector/users.store";
 import { useForm } from "@tanstack/react-form";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { AiOutlineUserDelete } from "react-icons/ai";
 import { z } from "zod";
 import { toaster } from "../../components/ui/toaster";

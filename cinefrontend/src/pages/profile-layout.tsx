@@ -1,5 +1,4 @@
 import {
-  Button,
   Container,
   Grid,
   GridItem,
@@ -8,9 +7,9 @@ import {
 } from "@chakra-ui/react";
 import { Header } from "../components/header";
 import {
-  ProfileMenuDrawer,
+  ProfileDrawer,
   ProfileSidebar,
-} from "../components/profile/profile-sidebar";
+} from "../components/profile/";
 import { Navigate, Outlet } from "react-router-dom";
 import { useStoreMap } from "effector-react";
 import { $tokenData } from "../effector/users.store";
@@ -35,11 +34,11 @@ export function ProfileLayout() {
       <Header
         extraRender={
           breakpoint === "base" && (
-            <ProfileMenuDrawer>
+            <ProfileDrawer>
               <IconButton variant="ghost">
                 <IoMenu />
               </IconButton>
-            </ProfileMenuDrawer>
+            </ProfileDrawer>
           )
         }
       />

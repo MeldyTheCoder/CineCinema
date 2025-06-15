@@ -1,5 +1,5 @@
 import { createStore, createEffect, createEvent, sample } from "effector";
-import { TFilm, TFilmAttachment } from "../types";
+import { TAnnounce, TFilm, TFilmAttachment } from "../types";
 import { filmAttachments } from "../test";
 import { app } from "../app";
 import { AxiosResponse } from "axios";
@@ -18,11 +18,11 @@ type FilmRequest = {
 export const $film = createStore<TFilm | null>(null);
 export const $films = createStore<TFilm[]>([]);
 export const $filmAttachments = createStore<TFilmAttachment[]>([]);
+export const $announcements = createStore<TAnnounce[]>([]);
 
 export const loadFilmsEv = createEvent<void>();
 export const resetFilmsEv = createEvent<void>();
-
-const loadFilmsFx = createEffect<void, TFilm[], Error>({
+export const loadFilmsFx = createEffect<void, TFilm[], Error>({
     name: 'loadFilmsFx',
     handler: async () => {
         const response = await app.get<any, AxiosResponse<TFilm[]>>('/films/');
@@ -42,9 +42,8 @@ export const loadFilmFx = createEffect<FilmRequest, TFilm, Error>({
 })
 
 export const loadFilmAttachmentsEv = createEvent<FilmAttachmentsRequest>();
-export const resetFilmAttachmentsEv = createEvent<null>();
-
-const loadFilmAttachmentsFx = createEffect<FilmAttachmentsRequest, TFilmAttachment[], Error>({
+export const resetFilmAttachmentsEv = createEvent<void>();
+export const loadFilmAttachmentsFx = createEffect<FilmAttachmentsRequest, TFilmAttachment[], Error>({
     name: 'loadFilmAttachmentsFx',
     handler: async ({filmId}) => {
         const response = await app.get<TFilmAttachment[]>(`/films/${filmId}/attachments/`);
@@ -52,12 +51,23 @@ const loadFilmAttachmentsFx = createEffect<FilmAttachmentsRequest, TFilmAttachme
     },
 });
 
+export const loadAnnouncementsEv = createEvent<void>();
+export const resetAnnouncementsEv = createEvent<void>();
+export const loadAnnouncementsFx = createEffect<void, TAnnounce[], Error>({
+    name: 'loadAnnouncementsFx',
+    handler: async () => {
+        const response = await app.get<TAnnounce[]>('/films/announcements/');
+        return camelArray<TAnnounce[]>(response.data);
+    }
+})
+
 $films.on(loadFilmsFx.doneData, (_, films) => films).reset(resetFilmsEv);
 $filmAttachments.on(loadFilmAttachmentsFx.doneData, (_, attachments) => attachments).reset(resetFilmAttachmentsEv);
 $film.on(loadFilmFx.doneData, (_, film) => film).reset(resetFilmEv);
 
 export const $filmsLoading = pending([loadFilmFx, loadFilmsFx]);
 export const $filmAttachmentsLoading = pending([loadFilmAttachmentsFx]);
+export const $announcementsLoading = pending([loadAnnouncementsFx]);
 
 sample({
     clock: loadFilmAttachmentsEv,
@@ -77,4 +87,14 @@ sample({
 sample({
     clock: loadFilmFx,
     target: loadFilmAttachmentsFx,
+})
+
+sample({
+    clock: loadAnnouncementsEv,
+    target: loadAnnouncementsFx,
+})
+
+sample({
+    clock: loadAnnouncementsFx.doneData,
+    target: $announcements,
 })

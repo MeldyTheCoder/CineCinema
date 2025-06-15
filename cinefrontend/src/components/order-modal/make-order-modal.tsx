@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Center,
@@ -16,16 +16,16 @@ import {
   useDialog,
   useSteps,
 } from "@chakra-ui/react";
-import { TSchedule, TSeat, TSeatType } from "../../../types";
+import { TSchedule, TSeat, TSeatType } from "../../types";
 import { useUnit } from "effector-react";
 import {
   $seats,
   $seatsLoading,
   loadScheduleSeatsFx,
-} from "../../../effector/schedule.store";
-import { getByDayId, getTimeFromSeconds } from "../../../utils/dates";
+} from "../../effector/schedule.store";
+import { getByDayId, getTimeFromSeconds } from "../../utils/dates";
 import { TbBuildingPavilion } from "react-icons/tb";
-import { groupByKey } from "../../../utils/arrays";
+import { groupByKey } from "../../utils/arrays";
 import { MdEventSeat } from "react-icons/md";
 import { BiSolidSelectMultiple } from "react-icons/bi";
 import { TbCreditCardPay } from "react-icons/tb";
@@ -33,10 +33,12 @@ import { LuCheck } from "react-icons/lu";
 import { SeatSelectStage } from "./seat-select-stage";
 import { ConfirmationStage } from "./confirmation-stage";
 import { PaymentStage } from "./payment-stage";
-import { toaster } from "../../ui/toaster";
-import { useForm, useStore } from "@tanstack/react-form";
-import { createOrderFx } from "../../../effector/orders.store";
+import { toaster } from "../ui/toaster";
+import { useForm } from "@tanstack/react-form";
+import { createOrderFx } from "../../effector/orders.store";
 import { useNavigate } from "react-router-dom";
+import { parseUrl } from "../../utils/urls";
+import { AgeRestrictionBadge } from "../films";
 
 type MakeOrderModalProps = {
   readonly schedule?: TSchedule;
@@ -106,9 +108,9 @@ export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
       schedule: schedule,
       paymentData: null,
     } as TOrderFormValues,
-    onSubmit({value}) {
+    onSubmit({ value }) {
       handleCreateOrder(value);
-    }
+    },
   });
 
   const steps = useSteps({
@@ -129,9 +131,12 @@ export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
     },
   });
 
-  const handleCreateOrder = ({schedule, seats, paymentData}: TOrderFormValues) => {
+  const handleCreateOrder = ({
+    schedule,
+    seats,
+    paymentData,
+  }: TOrderFormValues) => {
     dialog.setOpen(false);
-    console.log(schedule, seats, paymentData);
     if (seats.length <= 0 || !scheduleCache || !paymentData) {
       return toaster.create({
         title: "Не удалось создать заказ",
@@ -143,7 +148,7 @@ export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
       schedule: schedule.id,
       seats: seats.map((seat_) => seat_.id),
       paymentData,
-    }).then(({payment}) => navigate(`/redirect/payment/${payment.id}`));
+    }).then(({ payment }) => navigate(`/redirect/payment/${payment.id}`));
   };
 
   const items = [
@@ -200,14 +205,16 @@ export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
         <form.Field name="paymentData">
           {({ handleChange, handleBlur }) => (
             <PaymentStage
-              totalPrice={form.getFieldValue('seats').reduce(
-                (acc, value) =>
-                  (acc +=
-                    value.priceFactor *
-                    schedule?.hall.priceFactor! *
-                    schedule?.film.price!),
-                0
-              )}
+              totalPrice={form
+                .getFieldValue("seats")
+                .reduce(
+                  (acc, value) =>
+                    (acc +=
+                      value.priceFactor *
+                      schedule?.hall.priceFactor! *
+                      schedule?.film.price!),
+                  0
+                )}
               onBack={() => steps.goToPrevStep()}
               onComplete={(data) => {
                 handleChange(data);
@@ -265,7 +272,7 @@ export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
                 >
                   <GridItem rowSpan={6} colSpan={1}>
                     <Image
-                      src={scheduleCache.film.coverUrl}
+                      src={parseUrl(scheduleCache.film.coverUrl)}
                       aspectRatio="1x2"
                       borderRadius="15px"
                       width="125px"
@@ -297,9 +304,9 @@ export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
 
                   <GridItem colSpan={2} rowSpan={1}>
                     <Group>
-                      <Badge background="gray.800" borderRadius="lg">
-                        {scheduleCache.film.ageRestriction}+
-                      </Badge>
+                      <AgeRestrictionBadge
+                        ageRestriction={scheduleCache.film.ageRestriction}
+                      />
 
                       <Badge colorPalette="purple">
                         <TbBuildingPavilion />

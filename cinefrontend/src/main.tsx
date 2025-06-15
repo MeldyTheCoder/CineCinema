@@ -1,6 +1,5 @@
 import { createRoot } from "react-dom/client";
 import { Index } from "./pages/index";
-import { Film } from "./pages/film";
 import { Login } from "./pages/login";
 import { Provider } from "./components/ui/provider";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -14,7 +13,7 @@ import { ProfilePurchases } from "./pages/profile-pages/purchases";
 import { ProfileBonuses } from "./pages/profile-pages/bonuses";
 import { Support } from "./pages/profile-pages/support";
 import { checkIsAdultEv } from "./effector/age.store";
-import { FilmNew } from "./pages/film-new";
+import { Film } from "./pages/film";
 import { Registration } from "./pages/registration";
 import { SuccessPayment } from "./pages/success-payment";
 import { PaymentRedirect } from "./pages/payment-redirect";
@@ -30,8 +29,7 @@ function renderRoot() {
         <BrowserRouter>
           <Routes>
             <Route path="/" Component={Index} />
-            <Route path="/film/deprecated/:filmId" Component={Film} />
-            <Route path="/film/:filmId" Component={FilmNew} />
+            <Route path="/film/:filmId" Component={Film} />
             <Route path="/login/" Component={Login} />
             <Route path="/registration/" Component={Registration} />
             <Route path="/redirect/payment/:paymentId" Component={PaymentRedirect} />

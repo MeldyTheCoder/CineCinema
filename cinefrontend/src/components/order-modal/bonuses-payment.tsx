@@ -19,7 +19,7 @@ import {
   $bonusesInfo,
   $bonusesLoading,
   loadUserBonusesEv,
-} from "../../../effector/bonuses.store";
+} from "../../effector/bonuses.store";
 import { useEffect } from "react";
 import { FaCoins } from "react-icons/fa6";
 import { FaLevelUpAlt } from "react-icons/fa";

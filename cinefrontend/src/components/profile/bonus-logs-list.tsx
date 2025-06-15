@@ -12,13 +12,11 @@ import {
 import { TBonusLog } from "../../types";
 import { Avatar } from "../ui/avatar";
 import { FaCoins, FaLevelUpAlt, FaTicketAlt } from "react-icons/fa";
+import { parseUrl } from "../../utils/urls";
+import { useColorModeValue } from "../ui/color-mode";
 
 type BonusLogCardProps = {
   readonly log: TBonusLog;
-};
-
-type BonusLogsListProps = {
-  readonly logs: TBonusLog[];
 };
 
 function switchLogType(type: TBonusLog["type"]) {
@@ -62,7 +60,7 @@ export function BonusLogCard({ log }: BonusLogCardProps) {
     <Card.Root width="100%" borderRadius="15px" padding="10px">
       <Flex justify="space-between">
         <Group>
-          <Avatar src={log.order.schedule.film.coverUrl} width={70} height={70} />
+          <Avatar src={parseUrl(log.order.schedule.film.coverUrl)} width={70} height={70} />
           <VStack gap={0} alignItems="start">
             <Text textStyle="lg">{log.order.schedule.film.title}</Text>
             <Text textStyle="sm" color="gray.400">
@@ -79,77 +77,5 @@ export function BonusLogCard({ log }: BonusLogCardProps) {
         </VStack>
       </Flex>
     </Card.Root>
-  );
-}
-
-export function BonusLogsList({ logs }: BonusLogsListProps) {
-  return (
-    <Stack gap={5} direction="column">
-      <For each={logs}>{(log) => <BonusLogCard log={log} />}</For>
-    </Stack>
-  );
-}
-
-export function BonusesHelperCards() {
-  return (
-    <Flex justify="space-between" gap={{lg: 5, base: 3}} wrap={{base: "wrap", lg: 'nowrap'}}>
-      <Card.Root
-        flexDirection="row"
-        overflow="hidden"
-        maxW="xl"
-        w={{base: '100%', lg: 'auto'}}
-        alignItems="center"
-        paddingLeft="20px"
-        bg="gray.900"
-      >
-        <FaTicketAlt width="100px" />
-        <Box>
-          <Card.Body>
-            <Card.Title mb="2">Много билетов!</Card.Title>
-            <Card.Description>
-              Каждая покупка билета приносит бонусы!
-            </Card.Description>
-          </Card.Body>
-        </Box>
-      </Card.Root>
-      <Card.Root
-        flexDirection="row"
-        overflow="hidden"
-        maxW="xl"
-        w={{base: '100%', lg: 'auto'}}
-        alignItems="center"
-        paddingLeft="20px"
-        bg="gray.900"
-      >
-        <FaCoins />
-        <Box>
-          <Card.Body>
-            <Card.Title mb="2">Получайте бонусные монеты</Card.Title>
-            <Card.Description>
-              10% от суммы заказа — ваши бонусные монеты
-            </Card.Description>
-          </Card.Body>
-        </Box>
-      </Card.Root>
-      <Card.Root
-        flexDirection="row"
-        overflow="hidden"
-        maxW="xl"
-        w={{base: '100%', lg: 'auto'}}
-        alignItems="center"
-        paddingLeft="20px"
-        bg="gray.900"
-      >
-        <FaLevelUpAlt />
-        <Box>
-          <Card.Body>
-            <Card.Title mb="2">Повышайте уровень</Card.Title>
-            <Card.Description>
-              Каждые 2 бонуса = 1 очко прогресса в вашем уровне
-            </Card.Description>
-          </Card.Body>
-        </Box>
-      </Card.Root>
-    </Flex>
   );
 }

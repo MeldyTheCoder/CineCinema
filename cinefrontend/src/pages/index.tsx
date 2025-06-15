@@ -1,23 +1,27 @@
 import {
+  Center,
   Container,
-  Flex,
+  Spinner,
   Stack,
-  createListCollection,
   useBreakpointValue,
-  useMediaQuery,
 } from "@chakra-ui/react";
 import { Header } from "../components/header";
-import { announces } from "../test";
 import { AnnounceCard } from "../components/announce-card";
-import { FilmsList } from "../components/films/films-list";
-import { TFilm, TGenre } from "../types";
+import { FilmsList } from "../components/films";
+import { TAnnounce, TFilm } from "../types";
 import { useNavigate } from "react-router-dom";
 import { useUnit } from "effector-react";
-import { useEffect, useMemo } from "react";
-import { filterByUnique, stringToColor } from "../utils/arrays";
-import { $films, loadFilmsEv } from "../effector/films.store";
+import { useEffect } from "react";
+import {
+  $announcements,
+  $announcementsLoading,
+  $films,
+  loadAnnouncementsEv,
+  loadFilmsEv,
+} from "../effector/films.store";
 import Slider from "react-slick";
 import { styled } from "styled-components";
+import { Footer } from "../components/footer";
 
 export const StyledSlider = styled(Slider)`
   width: 100%;
@@ -56,6 +60,12 @@ export const StyledSlider = styled(Slider)`
 `;
 
 function AnouncesSlider() {
+  const navigate = useNavigate();
+  const [anouncements, loading] = useUnit([
+    $announcements,
+    $announcementsLoading,
+  ]);
+
   const breakPoint = useBreakpointValue({
     base: "base",
     sm: "sm",
@@ -76,14 +86,33 @@ function AnouncesSlider() {
     centerMode: true,
   };
 
+  useEffect(() => {
+    loadAnnouncementsEv();
+  }, []);
+
+  const handleAnnounceClick = (announce: TAnnounce) => {
+    if (announce.film?.id) {
+      navigate(`/film/${announce.film.id}/`);
+    }
+  }
+  
+  if (loading) {
+    return (
+      <Center width="100%">
+        <Spinner />
+      </Center>
+    );
+  }
+
   return (
     <StyledSlider {...settings}>
-      {announces.map((announce) => (
-        <AnnounceCard announce={announce} />
+      {anouncements.map((announce) => (
+        <AnnounceCard announce={announce} onClick={handleAnnounceClick} />
       ))}
     </StyledSlider>
   );
 }
+
 export function Index() {
   const [films, loadFilms] = useUnit([$films, loadFilmsEv]);
   const navigate = useNavigate();
@@ -92,28 +121,8 @@ export function Index() {
     navigate(`/film/${film.id}`);
   };
 
-  const genres = useMemo<TGenre[]>(() => {
-    console.log(films[0]);
-
-    return filterByUnique<TGenre>(
-      films.map((film) => (film?.genres! || []).map((genre) => genre!)).flat(),
-      (genre: TGenre) => genre?.id
-    );
-  }, [films]);
-
-  const genresCollection = useMemo(
-    () =>
-      createListCollection<TGenre>({
-        items: genres,
-        itemToString: (item) => item.title,
-        itemToValue: (item) => `${item.id}`,
-      }),
-    [genres]
-  );
-
   useEffect(() => {
     loadFilms();
-    console.log(films);
   }, []);
 
   return (
@@ -129,6 +138,7 @@ export function Index() {
           </Stack>
         </Container>
       </Stack>
+      <Footer />
     </>
   );
 }

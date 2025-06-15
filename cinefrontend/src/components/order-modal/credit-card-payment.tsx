@@ -1,8 +1,19 @@
-import { Box, Button, chakra, Field, Flex, Grid, GridItem, Input, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  chakra,
+  Field,
+  Flex,
+  Grid,
+  GridItem,
+  Input,
+  Text,
+} from "@chakra-ui/react";
 import { useForm } from "@tanstack/react-form";
 import { useMemo, useState } from "react";
 import { withMask } from "use-mask-input";
 import { z } from "zod";
+import { DarkMode, useColorMode, useColorModeValue } from "../ui/color-mode";
 
 type CreditCardProps = {
   readonly number: string;
@@ -25,13 +36,13 @@ type CreditCardFormProps = {
 const CardContainer = chakra("div", {
   base: {
     marginTop: "1rem",
-    maxW: {base: "100%", md: "60%"},
+    maxW: { base: "100%", md: "60%" },
     display: "flex",
-    flexDirection: {base: "column", xl: 'row'},
+    flexDirection: { base: "column", xl: "row" },
     justifyContent: "center",
     alignItems: "center",
     gap: "2rem",
-    paddingX: {base: '5px', md: '0'}
+    paddingX: { base: "5px", md: "0" },
   },
 });
 
@@ -41,6 +52,9 @@ export function CreditCard({
   cvv,
   isFlipped,
 }: CreditCardProps) {
+  const cardBg = useColorModeValue('gray.100', 'gray.950');
+  const cardCvvBg = useColorModeValue('gray.400', 'gray.700');
+
   const formattedCardNumber = useMemo(() => {
     const cleaned = number.replace(/\D/g, "").slice(0, 16);
 
@@ -225,13 +239,17 @@ export function CreditCard({
   };
 
   return (
-    <Box perspective="1000px" width={{base: '100%', sm: "400px"}} position="relative">
+    <Box
+      perspective="1000px"
+      width={{ base: "100%", sm: "400px" }}
+      position="relative"
+    >
       <Box
         transform={isFlipped ? "rotateY(180deg)" : "rotateY(0)"}
         transition="transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)"
         transformStyle="preserve-3d"
         width="100%"
-        height={{base: '200px', md: "240px"}}
+        height={{ base: "200px", md: "240px" }}
       >
         <Flex
           position="absolute"
@@ -240,10 +258,10 @@ export function CreditCard({
           backfaceVisibility="hidden"
           borderRadius="15px"
           p={4}
+          bg={cardBg}
           direction="column"
           justify="space-between"
           bgGradient="linear(45deg, blue.600, blue.400)"
-          color="white"
           boxShadow="lg"
         >
           <Flex justify="space-between" align="start">
@@ -263,6 +281,7 @@ export function CreditCard({
           backfaceVisibility="hidden"
           borderRadius="15px"
           p={4}
+          bg={cardBg}
           direction="column"
           align="flex-end"
           justify="flex-end"
@@ -270,7 +289,7 @@ export function CreditCard({
           transform="rotateY(180deg)"
           boxShadow="lg"
         >
-          <Box width="100%" height="40px" bg="gray.700" my={4} />
+          <Box width="100%" height="40px" bg={cardCvvBg} my={4} />
           <Text>CVV: {cvv.padEnd(3, "•")}</Text>
         </Flex>
       </Box>
@@ -428,8 +447,13 @@ export function CreditCardForm({ totalPrice, onSubmit }: CreditCardFormProps) {
           </form.Field>
         </GridItem>
 
-        <GridItem colSpan={{base: 4, lg: 2}} rowSpan={2} alignItems="end">
-          <Button borderRadius="15px" gap="5px" width="100%" onClick={() => form.handleSubmit()}>
+        <GridItem colSpan={{ base: 4, lg: 2 }} rowSpan={2} alignItems="end">
+          <Button
+            borderRadius="15px"
+            gap="5px"
+            width="100%"
+            onClick={() => form.handleSubmit()}
+          >
             Оплатить <strong>{Math.round(totalPrice / 100)} ₽</strong>
           </Button>
         </GridItem>

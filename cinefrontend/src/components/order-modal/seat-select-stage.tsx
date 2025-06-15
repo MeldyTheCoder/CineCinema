@@ -1,10 +1,10 @@
 import { useUnit } from "effector-react";
 import { useMemo, useState } from "react";
-import { $seats, $seatsLoading } from "../../../effector/schedule.store";
-import { TSeat, TSchedule } from "../../../types";
-import { toaster } from "../../ui/toaster";
+import { $seats, $seatsLoading } from "../../effector/schedule.store";
+import { TSeat, TSchedule } from "../../types";
+import { toaster } from "../ui/toaster";
 import { ActionBar, Button, Flex, Portal, Text } from "@chakra-ui/react";
-import { SeatsGrid } from "../../seats-grid";
+import { SeatsGrid } from "./seats-grid";
 import { GrNext } from "react-icons/gr";
 
 const MAX_SEATS_PER_ORDER = 4;

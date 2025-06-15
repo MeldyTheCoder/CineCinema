@@ -3,6 +3,7 @@ import Masonry from "react-masonry-css";
 import { TFilmAttachment } from "../../types";
 import { createGlobalStyle } from "styled-components";
 import { useMemo } from "react";
+import { parseUrl } from "../../utils/urls";
 
 const MasonryStyles = createGlobalStyle`
   .my-masonry-grid {
@@ -50,7 +51,7 @@ export function AttachmentsList({ attachments }: AttachmentListProps) {
           height="200px"
           style={{ borderRadius: "15px" }}
         >
-          <source src={trailer.attachmentUrl} />
+          <source src={parseUrl(trailer.attachmentUrl)} />
         </video>
       )}
       <Box>
@@ -68,7 +69,7 @@ export function AttachmentsList({ attachments }: AttachmentListProps) {
               _hover={{ transform: "scale(1.02)" }}
             >
               <Image
-                src={attachment.attachmentUrl}
+                src={parseUrl(attachment.attachmentUrl)}
                 w="full"
                 h="auto"
                 minH={`${Math.random() * 300 + 200}px`}

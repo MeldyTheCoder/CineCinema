@@ -9,7 +9,7 @@ import {
   Stat,
   Table,
 } from "@chakra-ui/react";
-import { TSeat, TSchedule, TSeatType } from "../../../types";
+import { TSeat, TSchedule, TSeatType } from "../../types";
 import { useMemo } from "react";
 import { TiDeleteOutline } from "react-icons/ti";
 
