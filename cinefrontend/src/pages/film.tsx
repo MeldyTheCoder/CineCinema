@@ -43,7 +43,7 @@ import {
   AgeVerificationModal,
   AgeRestrictionBadge,
   GenresTags,
-  Schedule
+  Schedule,
 } from "../components/films/";
 import { MakeOrderModal } from "../components/order-modal";
 import { parseUrl } from "../utils/urls";
@@ -53,7 +53,15 @@ const FilmTrailerContainer = chakra("div", {
     position: "relative",
     width: "100%",
     height: { lg: "290px", base: "150px" },
-    bg: "gray.800",
+  },
+});
+
+const FilmTrailerWrapper = chakra("div", {
+  base: {
+    position: "absolute",
+    width: "inherit",
+    height: { lg: "393px", base: "273px" },
+    bg: "gray.700",
   },
 });
 
@@ -196,7 +204,9 @@ export function Film() {
       <Header transparent />
 
       <FilmTrailerContainer>
-        {!!filmTrailer && <FilmTrailer trailer={filmTrailer!} />}
+        <FilmTrailerWrapper>
+          {!!filmTrailer && <FilmTrailer trailer={filmTrailer!} />}
+        </FilmTrailerWrapper>
       </FilmTrailerContainer>
       <PageBody>
         <Container>
@@ -406,7 +416,7 @@ export function Film() {
 
                   <Stack direction="row" gap={10} alignItems="center">
                     <Stack direction="column" gap={2}>
-                      <Text textStyle="2xl" fontWeight="bold">
+                      <Text textStyle="xl" fontWeight="semibold">
                         Рейтинг фильма
                       </Text>
                       <Skeleton loading={filmLoading}>
@@ -423,7 +433,16 @@ export function Film() {
                       </Skeleton>
                     </Stack>
 
-                    <Text color="green" fontSize="30px">
+                    <Text
+                      color={(() => {
+                        const clampedValue = Math.min(10, Math.max(0, film?.rating!));
+                        const percentage = (clampedValue / 10) * 100;
+                        const red = Math.floor(255 * (1 - percentage / 100));
+                        const green = Math.floor(255 * (percentage / 100));
+                        return `rgb(${red}, ${green}, 0)`;
+                      })()}
+                      fontSize="25px"
+                    >
                       <Skeleton minHeight={10} loading={filmLoading}>
                         {film?.rating}
                       </Skeleton>

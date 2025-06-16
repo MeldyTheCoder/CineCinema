@@ -1,6 +1,9 @@
 import { Box, chakra, Flex, Text } from "@chakra-ui/react";
+import { useColorModeValue } from "../ui/color-mode";
 
 export function CinemaScreen() {
+  const screenBg = useColorModeValue('#a1a1aa', 'white');
+
   return (
     <svg
       _ngcontent-ng-c2656426034=""
@@ -40,7 +43,7 @@ export function CinemaScreen() {
                    C335 -25 529 -26 754.5 0
                    V-70
                    H439.739Z"
-            fill="white"
+            fill={screenBg}
           ></path>
         </g>
       </g>

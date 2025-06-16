@@ -18,6 +18,7 @@ import { Registration } from "./pages/registration";
 import { SuccessPayment } from "./pages/success-payment";
 import { PaymentRedirect } from "./pages/payment-redirect";
 import { CashPaymentInstructions } from "./pages/cash-instructions";
+import { Page404 } from "./pages/404";
 
 attachLogger();
 
@@ -44,6 +45,7 @@ function renderRoot() {
               <Route path="*" element={<span>Ничего не найдено!</span>} />
             </Route>
             {/* <Route path="/order/" Component={CreateOrder} /> */}
+            <Route path="*" Component={Page404} />
           </Routes>
         </BrowserRouter>
       </Provider>

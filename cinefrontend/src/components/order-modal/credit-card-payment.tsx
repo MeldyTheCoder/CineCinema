@@ -249,7 +249,7 @@ export function CreditCard({
         transition="transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)"
         transformStyle="preserve-3d"
         width="100%"
-        height={{ base: "200px", md: "240px" }}
+        height={{ base: "220px", md: "240px" }}
       >
         <Flex
           position="absolute"
@@ -262,7 +262,7 @@ export function CreditCard({
           direction="column"
           justify="space-between"
           bgGradient="linear(45deg, blue.600, blue.400)"
-          boxShadow="lg"
+          boxShadow={{md: "lg", base: 'md'}}
         >
           <Flex justify="space-between" align="start">
             <Text fontSize="xl">{formattedCardNumber}</Text>
@@ -287,7 +287,7 @@ export function CreditCard({
           justify="flex-end"
           bgGradient="linear(45deg, blue.400, blue.600)"
           transform="rotateY(180deg)"
-          boxShadow="lg"
+          boxShadow={{md: "lg", base: 'md'}}
         >
           <Box width="100%" height="40px" bg={cardCvvBg} my={4} />
           <Text>CVV: {cvv.padEnd(3, "•")}</Text>

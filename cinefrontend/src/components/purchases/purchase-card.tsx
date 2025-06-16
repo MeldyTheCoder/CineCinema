@@ -34,6 +34,7 @@ import { parseUrl } from "../../utils/urls";
 import { AgeRestrictionBadge, GenresTags } from "../films";
 import { SeatCard } from "./seat-card";
 import { useColorModeValue } from "../ui/color-mode";
+import { PurchaseActionButtons } from "./purchase-action-buttons";
 
 type PurchaseCardProps = {
   readonly order: TOrder;
@@ -67,7 +68,9 @@ const OrderPositionSpan = chakra(
   }
 );
 
-export function switchOrderStatusesBadgeParams(status: string): [string, string] {
+export function switchOrderStatusesBadgeParams(
+  status: string
+): [string, string] {
   switch (status) {
     case OrderStatuses.NOT_PAID:
       return ["Ожидает оплаты", "red"];
@@ -90,7 +93,7 @@ export function switchOrderStatusesBadgeParams(status: string): [string, string]
 }
 
 export function PurchaseCard({ order }: PurchaseCardProps) {
-  const orderStatusBadgeBg = useColorModeValue('gray.200', 'gray.800');
+  const orderStatusBadgeBg = useColorModeValue("gray.200", "gray.800");
 
   const film = order.schedule.film;
 
@@ -98,142 +101,6 @@ export function PurchaseCard({ order }: PurchaseCardProps) {
     () => switchOrderStatusesBadgeParams(order.status),
     [order.status]
   );
-
-  const handleTicketPrint = () => {
-    printOrderTicketFx({ orderId: order.id }).then((html) => {
-      const blob = new Blob([html], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Билет_${order.schedule.film.title}_${getByDayId(
-        order.schedule.dayId,
-        order.schedule.year
-      ).format("DD-MM-YYYY")}-${getTimeFromSeconds(order.schedule.time)}.html`;
-      document.body.appendChild(a);
-      a.click();
-
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-    });
-  };
-
-  const handleReceiptPrint = () => {
-    printOrderReceiptFx({ orderId: order.id }).then((html) => {
-      const blob = new Blob([html], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Чек_${order.schedule.film.title}_${getByDayId(
-        order.schedule.dayId,
-        order.schedule.year
-      ).format("DD-MM-YYYY")}-${getTimeFromSeconds(order.schedule.time)}.html`;
-      document.body.appendChild(a);
-      a.click();
-
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-    });
-  };
-
-  const handleRefund = () => {
-    refundOrderFx({ orderId: order.id }).then((order) =>
-      toaster.create({
-        title: "Возврат средств",
-        description: (
-          <>
-            Возврат средств за заказ "{order.schedule.film.title} был успешно
-            оформлен.
-          </>
-        ),
-        type: "success",
-      })
-    );
-  };
-
-  const handleCancel = () => {
-    cancelOrderFx({ orderId: order.id }).then((order) => {
-      toaster.create({
-        title: "Отмена заказа",
-        description: (
-          <>Заказ "{order.schedule.film.title}" был успешно отменен.</>
-        ),
-        type: "success",
-      });
-    });
-  };
-
-  const actionButtons: React.ReactNode[] = useMemo(() => {
-    const EMPTY_ACTIONS = (
-      <Text color="gray.500" fontStyle="revert">
-        Нет доступных действий
-      </Text>
-    );
-
-    const CANCEL = (
-      <Button variant="subtle" colorPalette="red" onClick={handleCancel}>
-        <TbCancel />
-        Отменить
-      </Button>
-    );
-    const PRINT_RECEIPT = (
-      <Button variant="subtle" onClick={handleReceiptPrint}>
-        <IoReceiptOutline />
-        Распечатать чек
-      </Button>
-    );
-    const PRINT_TICKET = (
-      <Button
-        colorPalette="purple"
-        variant="subtle"
-        onClick={handleTicketPrint}
-      >
-        <IoTicketOutline />
-        Распечатать билет
-      </Button>
-    );
-    const REFUND = (
-      <Button colorPalette="orange" variant="subtle" onClick={handleRefund}>
-        <TbCreditCardRefund />
-        Оформить возврат
-      </Button>
-    );
-    const PAY = (
-      <PaymentModal order={order}>
-        <Button colorPalette="green" variant="subtle">
-          <CiCreditCard1 />
-          Оплатить
-        </Button>
-      </PaymentModal>
-    );
-
-    switch (order.status) {
-      case OrderStatuses.COMPLETE:
-        return [PRINT_RECEIPT, REFUND];
-      case OrderStatuses.CANCELED:
-        return [EMPTY_ACTIONS];
-
-      case OrderStatuses.NOT_PAID:
-        return [PAY, CANCEL];
-
-      case OrderStatuses.POSTPONED:
-        return [PRINT_TICKET, PRINT_RECEIPT, REFUND];
-
-      case OrderStatuses.PAID:
-        return [PRINT_TICKET, PRINT_RECEIPT, REFUND];
-
-      case OrderStatuses.REFUND:
-        return [PRINT_RECEIPT];
-
-      default:
-        return [EMPTY_ACTIONS];
-    }
-  }, [order.status]);
 
   return (
     <Card.Root
@@ -350,7 +217,8 @@ export function PurchaseCard({ order }: PurchaseCardProps) {
         <Divider />
 
         <Card.Footer justifyContent="space-between">
-          <Group>{actionButtons.map((button) => button)}</Group>
+          <PurchaseActionButtons order={order} />
+          
           <VStack gap="0px">
             <OrderPriceLabel>{order.price / 100} ₽</OrderPriceLabel>
             <OrderPositionSpan display={{ base: "none", lg: "flex" }}>

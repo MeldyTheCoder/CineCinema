@@ -104,7 +104,7 @@ export function ProfilePurchases() {
               </AddLocalOrderModal>
             </Group>
 
-            <Box overflowX="auto">
+            <Box overflowX="auto" width="100%">
               <SegmentGroup.Root
                 value={status}
                 onValueChange={(value) => setStatus(value.value)}

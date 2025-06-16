@@ -353,6 +353,27 @@ class Seat(BaseOrmarModel):
 
     type = ormar.Enum(enum_class=SeatType, nullable=False, default=SeatType.STANDART)
 
+    async def verbose_name(self):
+        seats_for_hall: list = (
+            await self.__class__.objects.filter(
+                hall__id=self.hall.id,
+                type__in=[
+                    SeatType.STANDART,
+                    SeatType.VIP,
+                    SeatType.DISABLED,
+                ],
+            )
+            .order_by("row")
+            .order_by("column")
+            .all()
+        )
+
+        for idx, seat in enumerate(seats_for_hall):
+            if seat.id == self.id:
+                return f"{seat.row} ряд {idx + 1} место"
+
+        return ""
+
 
 class Schedule(BaseOrmarModel):
     ormar_config = ormar_config.copy(
@@ -564,12 +585,16 @@ class Payment(BaseOrmarModel):
     id: int = ormar.Integer(primary_key=True, autoincrement=True)
     amount: int = ormar.Integer(minimum=0, nullable=False)
     status: PaymentStatuses = ormar.Enum(
-        enum_class=PaymentStatuses, default=PaymentStatuses.PENDING, nullable=False,
+        enum_class=PaymentStatuses,
+        default=PaymentStatuses.PENDING,
+        nullable=False,
     )
     payment_method: str = ormar.Enum(enum_class=PaymentMethods, nullable=False)
     gateway_id: str = ormar.String(max_length=255, nullable=True)
     created_at: datetime = ormar.DateTime(
-        timezone=True, default=get_current_time, nullable=False,
+        timezone=True,
+        default=get_current_time,
+        nullable=False,
     )
 
     order: Order = ormar.ForeignKey(
@@ -658,15 +683,7 @@ class BonusLogs(BaseOrmarModel):
     )
 
 
-@database.transaction()
-async def create_order(
-    schedule: Schedule, seats: list[Seat], user: User, payment_method: PaymentMethods
-):
-    """
-    Создание заказа на фильм, зал, время и место.
-    """
-    total_price = 0
-
+async def check_seats_available(schedule: Schedule, seats: list[Seat]) -> list[Seat]:
     for seat in seats:
         seat_unavailable = await Order.objects.filter(
             seats__id=seat.id,
@@ -678,8 +695,23 @@ async def create_order(
             ],
         ).exists()
         if seat_unavailable:
-            raise exceptions.SEAT_UNAVAILABLE
+            raise exceptions.SEAT_UNAVAILABLE(seat)
 
+    return seats
+
+
+@database.transaction()
+async def create_order(
+    schedule: Schedule,
+    seats: list[Seat],
+    user: User,
+    payment_method: PaymentMethods,
+):
+    """Создание заказа на фильм, зал, время и место."""
+    total_price = 0
+    seats_available = await check_seats_available(schedule=schedule, seats=seats)
+
+    for seat in seats_available:
         total_price += (
             schedule.film.price * schedule.hall.price_factor * seat.price_factor
         )
@@ -692,7 +724,7 @@ async def create_order(
         price=total_price,
     )
 
-    for seat in seats:
+    for seat in seats_available:
         await order.seats.add(seat)
 
     payment = await Payment.objects.create(

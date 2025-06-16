@@ -6,6 +6,8 @@ services:
     container_name: 'redis_service'
     volumes:
        - redis_cache:/data
+    ports: 
+      - "6380:6379"
 
   mysql_service:
     image: mysql:latest

@@ -23,6 +23,7 @@ import { HiSupport } from "react-icons/hi";
 import { useColorMode } from "../ui/color-mode.tsx";
 import { MenuButton, NavButton } from "./menu-button.tsx";
 import { parseUrl } from "../../utils/urls.ts";
+import { TiArrowBackOutline } from "react-icons/ti";
 
 export function ProfileSidebar() {
   const { toggleColorMode } = useColorMode();
@@ -36,12 +37,7 @@ export function ProfileSidebar() {
     <Card.Root justifyContent="start" textAlign="start" padding="15px">
       <Flex justifyContent="space-between">
         <HStack gap={2}>
-          <Avatar
-            size="xs"
-            src={
-              user ? parseUrl(user.avatar) : undefined
-            }
-          />
+          <Avatar size="xs" src={user ? parseUrl(user.avatar) : undefined} />
           <Text textStyle="md">{user?.firstName}</Text>
         </HStack>
         <Group>
@@ -74,10 +70,10 @@ export function ProfileSidebar() {
             <LuListOrdered />
             Покупки
           </MenuButton>
-          <MenuButton to="/profile/reviews/">
+          {/* <MenuButton to="/profile/reviews/">
             <IoStarOutline />
             Мои отзывы
-          </MenuButton>
+          </MenuButton> */}
           <MenuButton to="/profile/bonuses/">
             <FaMoneyBill />
             Бонусная программа
@@ -85,6 +81,10 @@ export function ProfileSidebar() {
           <MenuButton to="/profile/support/">
             <HiSupport />
             Поддержка
+          </MenuButton>
+          <MenuButton to="/">
+            <TiArrowBackOutline />
+            Вернуться на главную
           </MenuButton>
         </VStack>
 

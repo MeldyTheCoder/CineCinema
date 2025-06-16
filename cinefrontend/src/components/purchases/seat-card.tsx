@@ -50,7 +50,7 @@ export function SeatCard({
         align="center"
       >
         <Text fontStyle="xs">
-          {seat.row} ряд {seat.column} место
+          {seat.verboseName}
         </Text>
 
         <Text fontStyle="sm" fontWeight="semibold">

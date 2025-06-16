@@ -15,6 +15,7 @@ import { groupByKey } from "../../utils/arrays";
 import { getCurrentDate } from "../../utils/dates";
 import { Avatar } from "../../components/ui/avatar";
 import { styled } from "styled-components";
+import { useColorModeValue } from "../../components/ui/color-mode";
 
 const SupportHeader = chakra(Card.Root, {
   base: {
@@ -28,6 +29,9 @@ const SupportHeader = chakra(Card.Root, {
     padding: "15px 40px",
     borderRadius: 0,
     borderTopRadius: "15px",
+    _light: {
+      bg: 'gray.100',
+    }
   },
 });
 
@@ -45,7 +49,7 @@ const SupportRoot = styled.div`
 
 const SupportWrapper = chakra("div", {
   base: {
-    width: "80%",
+    width: {lg: "80%", base: '100%'},
     justifySelf: "center",
     borderColor: "gray.900",
     // borderWidth: '2px',
@@ -89,13 +93,16 @@ type MessagesProps = {
 };
 
 function Message({ isMine, text, dateTime }: MessageProps) {
+  const incomingMessageBg = useColorModeValue('purple.300', 'purple.900');
+  const outcomingMessageBg = useColorModeValue('gray.100', 'gray.800');
+
   return (
     <MessageContainer
       alignSelf={isMine ? "flex-end" : "flex-start"}
-      bg={isMine ? "purple.900" : "gray.800"}
+      bg={isMine ? incomingMessageBg : outcomingMessageBg}
     >
       <Text fontSize="18px">{text}</Text>
-      <Text fontSize="10px" color="gray.300" alignSelf="flex-end">
+      <Text fontSize="10px" color="fg.muted" alignSelf="flex-end">
         {dayjs(dateTime).format("HH:MM")}
       </Text>
     </MessageContainer>
@@ -134,7 +141,7 @@ function Messages({ messages }: MessagesProps) {
           <Flex direction="column" gap={5}>
             <Flex direction="column" gap={2}>
               <Separator />
-              <Text textAlign="center" color="gray.400">
+              <Text textAlign="center" color="fg.muted">
                 {date}
               </Text>
             </Flex>

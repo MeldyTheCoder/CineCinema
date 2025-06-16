@@ -18,13 +18,20 @@ export const loadRegionsFx = createEffect<void, TRegion[], Error>({
         const response = await app.get<any, AxiosResponse<TRegion[]>>(`/regions/`);
         return camelArray<TRegion[]>(response.data);
     }
+});
+
+export const setRegionFx = createEffect<TRegion, TRegion, Error>({
+    name: 'setRegionFx',
+    handler: async (region) => {
+        localStorage.setItem('regionId', `${region.id}`);
+        return region;
+    }
 })
 
 export const setRegionEv = createEvent<TRegion>();
 
 $regions.reset(resetRegionsEv);
 $regions.on(loadRegionsFx.doneData, (_, regions) => regions);
-$selectedRegion.on(setRegionEv, (_, region) => region);
 
 export const $regionsLoading = pending([loadRegionsFx]);
 
@@ -36,5 +43,25 @@ sample({
 sample({
     clock: loadRegionsFx.doneData,
     target: $selectedRegion,
-    fn: (regions) => regions.length > 0 ? regions[0] : null,
+    fn: (regions) => {
+        const regionId = localStorage.getItem('regionId');
+        if (regionId) {
+            return regions.find((region) => region.id === +regionId) || null;
+        }
+        if (regions.length > 0) {
+            return regions[0];
+        }
+        return null;
+    },
 })
+
+sample({
+    clock: setRegionEv,
+    target: setRegionFx,
+});
+
+sample({
+    clock: setRegionFx.doneData,
+    target: $selectedRegion,
+})
+

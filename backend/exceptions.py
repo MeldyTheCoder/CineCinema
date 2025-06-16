@@ -73,8 +73,8 @@ SEAT_NOT_FOUND = fastapi.HTTPException(
     status_code=404,
 )
 
-SEAT_UNAVAILABLE = fastapi.HTTPException(
-    detail="Данное место недоступно для бронирования.",
+SEAT_UNAVAILABLE = lambda seat: fastapi.HTTPException(  # noqa: E731
+    detail=f"Данное место ({seat.id}) недоступно для бронирования.",
     status_code=400,
 )
 

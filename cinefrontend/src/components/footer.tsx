@@ -10,7 +10,6 @@ import { FaCopyright, FaDocker, FaReact } from "react-icons/fa";
 import { SiFastapi, SiMysql, SiNginx } from "react-icons/si";
 import {DiRedis} from 'react-icons/di';
 import { getCurrentDate } from "../utils/dates";
-import LogoSmall from "../assets/logo-mobile.svg";
 
 export function Footer() {
   const textColor = useColorModeValue("black", "white");
@@ -18,14 +17,14 @@ export function Footer() {
   return (
     <Box
       w="100%"
-      marginTop="2rem"
+      mt="3rem"
       py={4}
-      px="13rem"
+      px={{lg: "13rem", base: '0'}}
       bg="bg.panel"
       color={textColor}
       boxShadow="md"
     >
-      <Flex mx="auto" justify="space-between" align="center">
+      <Flex mx="auto" justify={{base: 'center', lg: 'space-between'}} align="center">
         <Box>
           <HStack align="stretch" gap={2}>
             <Text fontSize="xl" letterSpacing="tighter" fontWeight="bold">
@@ -39,9 +38,7 @@ export function Footer() {
           </HStack>
         </Box>
 
-        {/* <img src={LogoSmall} width="50px" /> */}
-
-        <Flex align="center" fontSize="sm" gap={3}>
+        <Flex align="center" fontSize="sm" gap={3} display={{base: 'none', lg: 'flex'}}>
           <FaDocker size="25" color="#0362F5" />
           <FaReact size="25" color="#53C0DD" />
           <SiFastapi size="25" color="#019286" />

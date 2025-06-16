@@ -22,29 +22,64 @@ import {
   Skeleton,
   Box,
   Card,
+  VStack,
+  Alert,
 } from "@chakra-ui/react";
 import { TbBuildingPavilion } from "react-icons/tb";
 import { Map } from "./map";
 import styled from "styled-components";
+import { ScheduleEmptyState } from "./schedule-empty-state";
+import { useColorModeValue } from "../ui/color-mode";
+import { MdSchedule } from "react-icons/md";
 
 const DayBoxContainer = chakra("div", {
   base: {
-    color: "purple.500",
     transition: "color 0.3s",
     textAlign: "center",
     justifyContent: "center",
-    _hover: {
-      color: "purple.200",
-    },
     display: "flex",
     flexDirection: "column",
     gap: "5px",
+    paddingBottom: 2,
+  },
+  variants: {
+    selected: {
+      true: {
+        borderBottomWidth: "1px",
+        borderStyle: "solid",
+        _dark: {
+          color: "purple.100",
+          borderColor: "purple.100",
+        },
+        _light: {
+          color: "purple.500",
+          borderColor: "purple.500",
+        },
+      },
+      false: {
+        _light: {
+          color: "purple.700",
+          _hover: {
+            color: "purple.500",
+          },
+        },
+        _dark: {
+          color: "purple.300",
+          _hover: {
+            color: "purple.100",
+          },
+        },
+      },
+    },
+  },
+  defaultVariants: {
+    selected: false,
   },
 });
 
 const MapWrapper = styled(Card.Root).attrs({
   variant: "elevated",
-  boxShadow: 'lg',
+  boxShadow: "lg",
 })`
   div[dir="ltr"] {
     border-radius: 10px;
@@ -96,6 +131,8 @@ function MonthDayButtons({
   onClick,
   selected,
 }: MonthDayButtonsProps) {
+  const daySelectedBg = useColorModeValue("purple.400", "purple.100");
+
   const isSelected = (date: dayjs.Dayjs) => {
     return date.format("DD.MM.YYYY") == selected?.format("DD.MM.YYYY");
   };
@@ -112,10 +149,13 @@ function MonthDayButtons({
           scheduleElement.dayId,
           scheduleElement.year
         );
+        const isDaySelected = isSelected(dateObject);
+
         return (
           <DayBoxContainer
+            key={scheduleElement.dayId}
+            selected={isDaySelected}
             onClick={() => onClick?.(dateObject)}
-            color={isSelected(dateObject) ? "purple.200" : undefined}
           >
             <Text fontSize="24px">{dateObject.format("DD")}</Text>
             <Text fontSize="12px">{getWeekday(dateObject.weekday())}</Text>
@@ -220,11 +260,7 @@ function OfficeCard({ title, schedule, onScheduleSelect }: OfficeCardProps) {
       width="100%"
     >
       <MapWrapper width={{ base: "100%", lg: "300px" }} height="200px">
-        <Map
-          longitude={35.9242}
-          latitude={56.8625}
-          key={`map-${title}`}
-        />
+        <Map longitude={35.9242} latitude={56.8625} key={`map-${title}`} />
       </MapWrapper>
       <Stack gapY={3} direction="column">
         <Heading>{title}</Heading>
@@ -311,35 +347,57 @@ export function ScheduleNew({ onSelect }: ScheduleNewProps) {
         ))}
     </Stack>
   );
+
+  if (scheduleLoading) {
+    return <Stack gap={5}>{renderSkeleton()}</Stack>;
+  }
+
+  if (!schedule.length) {
+    return (
+      <Alert.Root
+        status="warning"
+        borderStartWidth="3px"
+        borderStartColor="colorPalette.solid"
+        alignItems="center"
+      >
+        <Alert.Indicator>
+          <MdSchedule />
+        </Alert.Indicator>
+        <Alert.Content>
+          <Alert.Title>Ближайшие сеансы не найдены.</Alert.Title>
+          <Alert.Description>
+            К сожалению, в данный момент ближайшие сеансы отсутсвуют.
+          </Alert.Description>
+        </Alert.Content>
+      </Alert.Root>
+    );
+  }
+
   return (
     <Stack gap={5}>
-      {scheduleLoading ? (
-        renderSkeleton()
-      ) : (
-        <ScheduleControls schedule={schedule}>
-          {(scheduleForDay) => {
-            const groupedByOffice = groupByOffice(scheduleForDay);
-            return (
-              <>
-                <Separator />
-                <Stack gap={10}>
-                  {Object.entries(groupedByOffice).map(
-                    ([officeTitle, schedule]) => (
-                      <div>
-                        <OfficeCard
-                          title={officeTitle}
-                          schedule={schedule}
-                          onScheduleSelect={handleScheduleSelect}
-                        />
-                      </div>
-                    )
-                  )}
-                </Stack>
-              </>
-            );
-          }}
-        </ScheduleControls>
-      )}
+      <ScheduleControls schedule={schedule}>
+        {(scheduleForDay) => {
+          const groupedByOffice = groupByOffice(scheduleForDay);
+          return (
+            <>
+              <Separator />
+              <Stack gap={10}>
+                {Object.entries(groupedByOffice).map(
+                  ([officeTitle, schedule]) => (
+                    <div>
+                      <OfficeCard
+                        title={officeTitle}
+                        schedule={schedule}
+                        onScheduleSelect={handleScheduleSelect}
+                      />
+                    </div>
+                  )
+                )}
+              </Stack>
+            </>
+          );
+        }}
+      </ScheduleControls>
     </Stack>
   );
 }

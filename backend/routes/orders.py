@@ -15,14 +15,17 @@ router = fastapi.APIRouter(
     tags=["Офисы и регионы"],
 )
 
-@router.post('/create/', name="Создание заказа")
+
+@router.post("/create/", name="Создание заказа")
 async def create_order(user: auth.UserType, form_data: serializers.CreateOrderRequest):
     current_date = dates.get_now()
     day_id = dates.day_of_year(current_date)
     year = current_date.year
     time = dates.seconds_since_start_of_day(current_date)
 
-    schedule = await models.Schedule.objects.select_related(['film', 'hall']).get_or_none(
+    schedule = await models.Schedule.objects.select_related(
+        ["film", "hall"]
+    ).get_or_none(
         ormar.or_(
             ormar.and_(
                 day_id__gt=day_id,
@@ -32,7 +35,7 @@ async def create_order(user: auth.UserType, form_data: serializers.CreateOrderRe
                 day_id=day_id,
                 year=year,
                 time__gt=time,
-            )
+            ),
         ),
         hall__active=True,
         id=form_data.schedule,
@@ -55,12 +58,15 @@ async def create_order(user: auth.UserType, form_data: serializers.CreateOrderRe
         schedule=schedule,
         seats=seats,
         user=user,
-        payment_method=form_data.payment_data.payment_method
+        payment_method=form_data.payment_data.payment_method,
     )
 
 
 @router.get("/", name="Вывод всех заказов авторизованного пользователя")
-async def get_user_orders(user: auth.UserType, data: typing.Annotated[serializers.UserOrdersRequest, fastapi.Query()]):
+async def get_user_orders(
+    user: auth.UserType,
+    data: typing.Annotated[serializers.UserOrdersRequest, fastapi.Query()],
+):
     query = models.Order.objects.select_related(
         [
             "user",
@@ -86,9 +92,20 @@ async def get_user_orders(user: auth.UserType, data: typing.Annotated[serializer
             schedule__film__title__icontains=data.search.lower(),
         )
 
-    return await query.order_by('-date_created').all()
+    orders_collected: list[dict] = []
+    orders: list[models.Order] = await query.order_by("-date_created").all()
+    for order in orders:
+        seats = await order.seats.all()
+        seats_reduced = [
+            {**seat.model_dump(), "verbose_name": await seat.verbose_name()}
+            for seat in seats
+        ]
+        orders_collected.append({**order.model_dump(), "seats": seats_reduced})
 
-@router.get('/pay/{payment_id}/', name="Оплата заказа")
+    return orders_collected
+
+
+@router.get("/pay/{payment_id}/", name="Оплата заказа")
 async def add_local_order(user: auth.UserType, payment_id: int):
     payment = await models.Payment.objects.get_or_none(id=payment_id)
     if not payment:
@@ -98,22 +115,24 @@ async def add_local_order(user: auth.UserType, payment_id: int):
         )
 
     success_url = await models.pay_order(payment, user)
-    return {'redirect_url': success_url}
+    return {"redirect_url": success_url}
 
-@router.post('/add/', name="Добавление заказа из чека")
-async def add_local_order(user: auth.UserType, form_data: serializers.AddLocalOrderRequest):
-    order = await models.add_local_order(
+
+@router.post("/add/", name="Добавление заказа из чека")
+async def add_local_order(
+    user: auth.UserType, form_data: serializers.AddLocalOrderRequest,
+):
+    return await models.add_local_order(
         user=user,
         order_id=form_data.order_id,
         price=form_data.price * 100,
     )
 
-    return order
 
-@router.get('/ticket/{order_id}/', name="Печать билета на фильм")
+@router.get("/ticket/{order_id}/", name="Печать билета на фильм")
 async def print_order_ticket(user: auth.UserType, order_id: int):
     order = await models.Order.objects.select_related(
-        ['schedule', 'seats', 'schedule__film', 'office', 'office__region']
+        ["schedule", "seats", "schedule__film", "office", "office__region"],
     ).get_or_none(
         id=order_id,
         user__id=user.id,
@@ -132,16 +151,22 @@ async def print_order_ticket(user: auth.UserType, order_id: int):
     template = await documents.render_ticket_pdf(order)
     return fastapi.Response(
         content=template,
-        media_type='text/html',
-        headers={
-            'Content-Disposition': 'attachment; filename=ticket.html'
-        }
+        media_type="text/html",
+        headers={"Content-Disposition": "attachment; filename=ticket.html"},
     )
+
 
 @router.get("/receipt/{order_id}/", name="Печать чека заказа")
 async def print_order_receipt(user: auth.UserType, order_id: int):
     order = await models.Order.objects.select_related(
-        ['schedule', 'seats', 'schedule__film', 'office', 'office__region', 'schedule__hall']
+        [
+            "schedule",
+            "seats",
+            "schedule__film",
+            "office",
+            "office__region",
+            "schedule__hall",
+        ],
     ).get_or_none(
         id=order_id,
         user__id=user.id,
@@ -158,15 +183,22 @@ async def print_order_receipt(user: auth.UserType, order_id: int):
     template = await documents.render_receipt(order)
     return fastapi.Response(
         content=template,
-        media_type='text/html',
+        media_type="text/html",
         headers={
-            'Content-Disposition': 'attachment; filename=ticket.html'
-        }
+            "Content-Disposition": "attachment; filename=ticket.html",
+        },
     )
 
-@router.post('/cancel/{order_id}/', name="Отмена заказа")
+
+@router.post("/cancel/{order_id}/", name="Отмена заказа")
 async def cancel_order(user: auth.UserType, order_id: int):
-    order = await models.Order.objects.select_related(['schedule', 'schedule__film', 'schedule__hall']).get_or_none(
+    order = await models.Order.objects.select_related(
+        [
+            "schedule",
+            "schedule__film",
+            "schedule__hall",
+        ],
+    ).get_or_none(
         id=order_id,
         user__id=user.id,
     )
@@ -181,12 +213,19 @@ async def cancel_order(user: auth.UserType, order_id: int):
     if order.status != models.OrderStatuses.NOT_PAID:
         raise exceptions.ORDER_CANCEL_RESTRICTED
 
-    await order.update(status=models.OrderStatuses.CANCELED, _columns={'status'})
+    await order.update(status=models.OrderStatuses.CANCELED, _columns={"status"})
     return order
 
-@router.post('/refund/{order_id}/', name="Возврат заказа")
+
+@router.post("/refund/{order_id}/", name="Возврат заказа")
 async def refund_order(user: auth.UserType, order_id: int):
-    order = await models.Order.objects.select_related(['schedule', 'schedule__film', 'schedule__hall']).get_or_none(
+    order = await models.Order.objects.select_related(
+        [
+            "schedule",
+            "schedule__film",
+            "schedule__hall",
+        ],
+    ).get_or_none(
         id=order_id,
         user__id=user.id,
     )

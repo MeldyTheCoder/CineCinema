@@ -81,6 +81,7 @@ export type TSeat = {
     priceFactor: number;
     type: TSeatType;
     isAvailable?: boolean;
+    verboseName: string;
 }
 
 export type TSchedule = {

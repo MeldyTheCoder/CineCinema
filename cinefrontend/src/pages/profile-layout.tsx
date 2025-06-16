@@ -15,6 +15,7 @@ import { useStoreMap } from "effector-react";
 import { $tokenData } from "../effector/users.store";
 import { stringify } from "qs";
 import { IoMenu } from "react-icons/io5";
+import { Footer } from "../components/footer";
 
 export function ProfileLayout() {
   const breakpoint = useBreakpointValue({

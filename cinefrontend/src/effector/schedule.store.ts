@@ -22,8 +22,12 @@ type WriteScheduleRequest = {
 
 type SeatsRequest = {
   scheduleId: number;
-}
+};
 
+type CheckSeatsAvailabilityRequest = {
+  scheduleId: number;
+  seats: Array<number>;
+};
 
 export const $schedule = createStore<TSchedule[]>([]);
 export const $scheduleElement = createStore<TSchedule | null>(null);
@@ -56,24 +60,37 @@ export const loadScheduleByIdFx = createEffect<
 });
 
 export const loadScheduleSeatsFx = createEffect<SeatsRequest, TSeat[], Error>({
-    name: 'loadHallSeatsFx',
-    handler: async ({scheduleId}) => {
-        const response = await app.get(`/schedule/seats/${scheduleId}/`);
-        return camelArray<TSeat[]>(response.data);
-    }
-})
+  name: "loadHallSeatsFx",
+  handler: async ({ scheduleId }) => {
+    const response = await app.get(`/schedule/seats/${scheduleId}/`);
+    return camelArray<TSeat[]>(response.data);
+  },
+});
 
 export const writeScheduleEv = createEvent<WriteScheduleRequest>();
 const writeScheduleFx = createEffect<WriteScheduleRequest, TOrder, Error>({
   name: "writeScheduleFx",
   handler: ({ scheduleId, seatId }) => {
-    throw new Error('Not implemented');
-  }
+    throw new Error("Not implemented");
+  },
+});
+
+export const checkSeatsAvailabilityFx = createEffect<
+  CheckSeatsAvailabilityRequest,
+  TSeat[],
+  Error
+>({
+  name: "checkSeatsAvailabilityFx",
+  handler: async ({ scheduleId, seats }) => {
+    const response = await app.post(`/schedule/seats/${scheduleId}/status/`, {
+      seats,
+    });
+    return camelArray<TSeat[]>(response.data);
+  },
 });
 
 export const $scheduleLoading = pending([loadScheduleFx, loadScheduleByIdFx]);
 export const $seatsLoading = pending([loadScheduleSeatsFx]);
-
 
 // sample({
 //   clock: loadScheduleByIdFx,
@@ -103,4 +120,10 @@ sample({
 sample({
   clock: loadScheduleByIdFx.doneData,
   target: $scheduleElement,
+});
+
+sample({
+  clock: checkSeatsAvailabilityFx.fail,
+  target: loadScheduleSeatsFx,
+  fn: ({ params }) => ({ scheduleId: params.scheduleId }),
 });

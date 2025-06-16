@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Badge, Wrap } from "@chakra-ui/react";
+import { useColorModeValue } from "./ui/color-mode";
 
 export type RadioBadgesProps<T> = {
   readonly value?: T;
@@ -10,19 +11,20 @@ export type RadioBadgesProps<T> = {
 };
 
 export function RadioBadges<T>({
+  value,
   elements,
   onSelect,
   itemRenderer,
 }: RadioBadgesProps<T>) {
-  const [selectedElement, setSelectedElement] = useState<T>();
+  const badgeBg = useColorModeValue('gray.100', 'gray.700');
+  const badgeSelectedBg = useColorModeValue('gray.300', 'gray.900');
 
   const handleChangeValue = (element: T): void => {
-    setSelectedElement(() => element);
     onSelect?.(element);
   };
 
   const checkIfSelected = (element: T): boolean => {
-    return JSON.stringify(element) === JSON.stringify(selectedElement!);
+    return element == value!;
   };
 
   return (
@@ -33,7 +35,7 @@ export function RadioBadges<T>({
           variant="subtle"
           onClick={() => handleChangeValue(element)}
           transition="background: 0.3s"
-          bg={checkIfSelected(element) ? "gray.700" : "gray.900"}
+          bg={checkIfSelected(element) ? badgeSelectedBg : badgeBg}
         >
           {itemRenderer(element)}
         </Badge>

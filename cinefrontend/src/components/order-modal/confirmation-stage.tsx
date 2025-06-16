@@ -12,6 +12,7 @@ import {
 import { TSeat, TSchedule, TSeatType } from "../../types";
 import { useMemo } from "react";
 import { TiDeleteOutline } from "react-icons/ti";
+import { calculateSeatsHumanPosition } from "../../utils/seats";
 
 const SeatsSumaryContainer = chakra("div", {
   base: {
@@ -25,6 +26,7 @@ const SeatsSumaryContainer = chakra("div", {
 });
 
 type SeatsConfirmationStageProps = {
+  readonly seats: TSeat[];
   readonly schedule: TSchedule;
   readonly selectedSeats: TSeat[];
   readonly onComplete?: () => void;
@@ -33,6 +35,7 @@ type SeatsConfirmationStageProps = {
 };
 
 export function ConfirmationStage({
+  seats,
   schedule,
   selectedSeats,
   onBack,
@@ -94,7 +97,7 @@ export function ConfirmationStage({
               >
                 <Table.Cell>{schedule.hall?.title}</Table.Cell>
                 <Table.Cell>
-                  {seat.row} ряд {seat.column} место
+                  {seat.verboseName}
                 </Table.Cell>
                 <Table.Cell>{getBadgeBySeatType(seat)}</Table.Cell>
                 <Table.Cell textAlign="end">

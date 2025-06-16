@@ -1,6 +1,10 @@
 import { useUnit } from "effector-react";
 import { useMemo, useState } from "react";
-import { $seats, $seatsLoading } from "../../effector/schedule.store";
+import {
+  $seats,
+  $seatsLoading,
+  checkSeatsAvailabilityFx,
+} from "../../effector/schedule.store";
 import { TSeat, TSchedule } from "../../types";
 import { toaster } from "../ui/toaster";
 import { ActionBar, Button, Flex, Portal, Text } from "@chakra-ui/react";
@@ -53,6 +57,21 @@ export function SeatSelectStage({
     });
   };
 
+  const handleComplete = () => {
+    checkSeatsAvailabilityFx({
+      scheduleId: schedule.id,
+      seats: selectedSeats.map((seat) => seat.id),
+    })
+      .then(() => onComplete?.(selectedSeats))
+      .catch(() => {
+        toaster.create({
+          type: "error",
+          title: "Что-то пошло не по плану ;(",
+          description: `К сожалению, некоторые из выбранных Вами мест оказались занятыми.`,
+        });
+      });
+  };
+
   return (
     <Flex direction="column" gap={10}>
       <SeatsGrid
@@ -88,7 +107,7 @@ export function SeatSelectStage({
               <Button
                 variant="outline"
                 size="xs"
-                onClick={() => onComplete?.(selectedSeats)}
+                onClick={handleComplete}
                 disabled={selectedSeats.length <= 0}
               >
                 <GrNext />

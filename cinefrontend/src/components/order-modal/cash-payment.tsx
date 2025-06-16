@@ -25,6 +25,9 @@ const DescriptionCard = chakra(Card.Root, {
     paddingLeft: "20px",
     maxW: "lg",
     bg: "gray.900",
+    _light: {
+      bg: 'gray.100',
+    }
   },
 });
 
@@ -33,19 +36,24 @@ export function CashPayment({ totalPrice, onSubmit }: CashPaymentProps) {
     <Center flexDirection="column">
       <Flex gap="5" direction="column" alignContent="center">
         <DescriptionCard>
-          <Text fontWeight="semibold" fontSize="lg">1</Text>
+          <Text fontWeight="semibold" fontSize="lg">
+            1
+          </Text>
           <Box>
             <Card.Body>
               <Card.Title mb="2">Покажите QR-код</Card.Title>
               <Card.Description>
-                Подойдите на кассу и предьявите QR-код, который вы получите после оплаты.
+                Подойдите на кассу и предьявите QR-код, который вы получите
+                после оплаты.
               </Card.Description>
             </Card.Body>
           </Box>
         </DescriptionCard>
 
         <DescriptionCard>
-        <Text fontWeight="semibold" fontSize="lg">2</Text>
+          <Text fontWeight="semibold" fontSize="lg">
+            2
+          </Text>
           <Box>
             <Card.Body>
               <Card.Title mb="2">Оплатите наличными</Card.Title>
@@ -58,7 +66,9 @@ export function CashPayment({ totalPrice, onSubmit }: CashPaymentProps) {
         </DescriptionCard>
 
         <DescriptionCard>
-        <Text fontWeight="semibold" fontSize="lg">3</Text>
+          <Text fontWeight="semibold" fontSize="lg">
+            3
+          </Text>
           <Box>
             <Card.Body>
               <Card.Title mb="2">Пройдите в Ваш зал</Card.Title>

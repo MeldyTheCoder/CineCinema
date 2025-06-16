@@ -42,6 +42,14 @@ export const FormContainer = chakra(
       _open: {
         animation: "fade-in 500ms ease-out",
       },
+      borderWidth: {
+        base: 0,
+        md: 1,
+      },
+      bg: {
+        base: 'transparent',
+        md: 'bg.panel',
+      }
     },
   },
   {

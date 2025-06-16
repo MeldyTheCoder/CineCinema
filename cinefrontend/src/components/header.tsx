@@ -21,7 +21,7 @@ import Logo from "../assets/logo.svg";
 import LogoMobile from "../assets/logo-mobile.svg";
 import LogoDark from "../assets/logo-dark.svg";
 import LogoMobileDark from "../assets/logo-mobile-dark.svg";
-import { useColorMode } from "./ui/color-mode";
+import { DarkMode, useColorMode } from "./ui/color-mode";
 import { parseUrl } from "../utils/urls";
 
 const HeaderContainer = chakra(
@@ -46,21 +46,24 @@ type HeaderProps = {
   readonly extraRender?: React.ReactNode;
 };
 
-export function HeaderLogo() {
-  const {colorMode} = useColorMode();
+type HeaderLogoProps = {
+  readonly colorMode?: "dark" | "light";
+};
+
+export function HeaderLogo({ colorMode }: HeaderLogoProps) {
   const breakpoint = useBreakpointValue({
-    base: 'base',
-    lg: 'lg',
+    base: "base",
+    lg: "lg",
   });
 
   const logo = useMemo(() => {
     switch (colorMode) {
-      case 'dark':
-        return breakpoint === 'base' ? LogoMobile : Logo;
-      case 'light':
-        return breakpoint === 'base' ? LogoMobileDark : LogoDark;
+      case "dark":
+        return breakpoint === "base" ? LogoMobile : Logo;
+      case "light":
+        return breakpoint === "base" ? LogoMobileDark : LogoDark;
     }
-  }, [colorMode, breakpoint])
+  }, [colorMode, breakpoint]);
 
   return (
     <Image
@@ -74,6 +77,7 @@ export function HeaderLogo() {
 
 export function Header({ transparent, extraRender }: HeaderProps) {
   const navigate = useNavigate();
+  const { colorMode } = useColorMode();
   const [selectedRegion] = useUnit([$selectedRegion]);
   const isAuthorized = useStoreMap($tokenData, (state) => !!state.accessToken);
   const [user] = useUnit([$user]);
@@ -102,18 +106,26 @@ export function Header({ transparent, extraRender }: HeaderProps) {
     return {};
   }, [transparent]);
 
+  const officePopover = (
+    <OfficesPopover>
+      <Link variant="underline">
+        <BsGeoAltFill /> {selectedRegion?.title}
+      </Link>
+    </OfficesPopover>
+  );
+
   return (
     <HeaderContainer
       animationStyle={{ _open: "slide-fade-in", _closed: "slide-fade-out" }}
       data-status="active"
-      paddingY={{lg: "20px", base: '5px'}}
-      paddingX={{base: "20px", lg: '50px'}}
+      paddingY={{ lg: "20px", base: "5px" }}
+      paddingX={{ base: "20px", lg: "50px" }}
       {...headerProps}
     >
       <Flex justifyContent="space-between" alignItems="center">
         <GridItem
           colSpan={{ lg: 3, base: 3 }}
-          gap={{lg: 5, base: '3px'}}
+          gap={{ lg: 5, base: "3px" }}
           display="flex"
           animationStyle={{
             _open: "slide-fade-in",
@@ -121,13 +133,16 @@ export function Header({ transparent, extraRender }: HeaderProps) {
           }}
         >
           <div onClick={handleIndexNavigate}>
-            <HeaderLogo />
+            <HeaderLogo colorMode={transparent ? "dark" : colorMode} />
           </div>
-          <OfficesPopover>
-            <Link variant="underline">
-              <BsGeoAltFill /> {selectedRegion?.title}
-            </Link>
-          </OfficesPopover>
+
+          {transparent ? (
+            <DarkMode>
+              {officePopover}
+            </DarkMode>
+          ) : (
+            officePopover
+          )}
         </GridItem>
 
         {isAuthorized && user ? (

@@ -4,6 +4,7 @@ import { TFilmAttachment } from "../../types";
 import { createGlobalStyle } from "styled-components";
 import { useMemo } from "react";
 import { parseUrl } from "../../utils/urls";
+import { AttachmentsEmptyState } from "./attachments-empty-state";
 
 const MasonryStyles = createGlobalStyle`
   .my-masonry-grid {
@@ -41,6 +42,10 @@ export function AttachmentsList({ attachments }: AttachmentListProps) {
     [attachments]
   );
 
+  if (!attachments || !attachments.length) {
+    return <AttachmentsEmptyState />;
+  }
+
   return (
     <Stack gap={2}>
       {!!trailer && (
@@ -73,8 +78,7 @@ export function AttachmentsList({ attachments }: AttachmentListProps) {
                 w="full"
                 h="auto"
                 minH={`${Math.random() * 300 + 200}px`}
-                borderRadius="sm"
-                objectFit="cover"
+                borderRadius="md"
                 loading="lazy"
                 cursor="pointer"
               />

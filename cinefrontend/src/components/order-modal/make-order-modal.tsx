@@ -54,12 +54,12 @@ type TOrderFormValues = {
 export const getColorForSeatType = (type: string) => {
   switch (type) {
     case TSeatType.DISABLED:
-      return "red";
+      return "red.emphasized";
     case TSeatType.VIP:
-      return "orange";
+      return "yellow.emphasized";
 
     case TSeatType.STANDART:
-      return "gray";
+      return "gray.emphasized";
   }
 };
 
@@ -90,9 +90,8 @@ function SeatsPrice({ schedule, seats }: any) {
         <Status.Root
           size="lg"
           width="100px"
-          colorPalette={getColorForSeatType(element.type)}
         >
-          <Status.Indicator />
+          <Status.Indicator bg={getColorForSeatType(element.type)}/>
           {element.price} RUB
         </Status.Root>
       ))}
@@ -148,7 +147,15 @@ export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
       schedule: schedule.id,
       seats: seats.map((seat_) => seat_.id),
       paymentData,
-    }).then(({ payment }) => navigate(`/redirect/payment/${payment.id}`));
+    })
+      .then(({ payment }) => navigate(`/redirect/payment/${payment.id}`))
+      .catch(() => {
+        toaster.create({
+          title: "Ошибка",
+          type: "error",
+          description: "Не удалось оформить заказ. Повторите попытку позднее.",
+        });
+      });
   };
 
   const items = [
@@ -177,6 +184,7 @@ export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
         <form.Field name="seats">
           {({ state, handleChange, handleBlur }) => (
             <ConfirmationStage
+              seats={seats}
               schedule={schedule!}
               selectedSeats={state.value}
               onSeatRemove={(seat) => {
@@ -276,6 +284,7 @@ export function MakeOrderModal({ schedule, onClose }: MakeOrderModalProps) {
                       aspectRatio="1x2"
                       borderRadius="15px"
                       width="125px"
+                      boxShadow="md"
                     />
                   </GridItem>
 

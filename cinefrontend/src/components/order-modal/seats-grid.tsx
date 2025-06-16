@@ -1,4 +1,5 @@
 import {
+  AbsoluteCenter,
   Button,
   chakra,
   Grid,
@@ -10,6 +11,7 @@ import { useCallback, useMemo } from "react";
 import { TSeat, TSeatType } from "../../types";
 import { CinemaScreen } from "./cinema-screen";
 import { FaCheck } from "react-icons/fa";
+import { lightenHexColor, darkenHexColor } from "../../utils/colors";
 
 const SeatsContainer = chakra(
   Grid,
@@ -67,6 +69,13 @@ export function Seat({ seat, index, selected }: SeatProps) {
   const seatType = seat.isAvailable === false ? TSeatType.DISABLED : seat.type;
   const cellContent = selected ? <FaCheck /> : index.toString();
 
+  const generatePropsForColor = (color: string) => {
+    return {
+      bg: lightenHexColor(color, 30),
+      color: darkenHexColor(color, 50),
+      borderColor: darkenHexColor(color, 80),
+    }
+  }
   const seatProps = useMemo(() => {
     switch (seatType) {
       case TSeatType.VOID:
@@ -77,8 +86,8 @@ export function Seat({ seat, index, selected }: SeatProps) {
       case TSeatType.DISABLED:
         return {
           disabled: true,
-          colorPalette: "red",
           children: cellContent,
+          colorPalette: "red",
         };
       case TSeatType.STANDART:
         return {
@@ -87,7 +96,7 @@ export function Seat({ seat, index, selected }: SeatProps) {
         };
       case TSeatType.VIP:
         return {
-          colorPalette: "yellow",
+          colorPalette: 'yellow',
           children: cellContent,
         };
       default:
@@ -119,7 +128,9 @@ export function SeatsGrid({
   );
 
   return loading ? (
-    <Spinner />
+    <AbsoluteCenter>
+      <Spinner />
+    </AbsoluteCenter>
   ) : (
     <VStack gap={1}>
       <CinemaScreen />

@@ -4,7 +4,7 @@ import { MdSchedule } from "react-icons/md";
 export function ScheduleEmptyState() {
   return (
     <Center>
-      <EmptyState.Root width="auto">
+      <EmptyState.Root width="auto" padding={0}>
         <EmptyState.Content>
           <EmptyState.Indicator>
             <MdSchedule />

@@ -310,3 +310,9 @@ class CreateOrderRequest(BaseModel):
         alias="paymentData",
         title="Данные платежа",
     )
+
+class SeatsStatusRequest(BaseModel):
+    seats: list[int] = pydantic.Field(
+        alias="seats",
+        title="ID мест",
+    )

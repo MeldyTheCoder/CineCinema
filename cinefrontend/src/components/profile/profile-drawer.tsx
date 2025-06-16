@@ -10,6 +10,7 @@ import { LuListOrdered } from "react-icons/lu";
 import { HiSupport } from "react-icons/hi";
 import { Avatar } from "../ui/avatar";
 import { parseUrl } from "../../utils/urls";
+import { TiArrowBackOutline } from "react-icons/ti";
 
 export function ProfileDrawer({
   children,
@@ -70,10 +71,10 @@ export function ProfileDrawer({
                         <LuListOrdered />
                         Покупки
                       </MenuButton>
-                      <MenuButton to="/profile/reviews/">
+                      {/* <MenuButton to="/profile/reviews/">
                         <IoStarOutline />
                         Мои отзывы
-                      </MenuButton>
+                      </MenuButton> */}
                       <MenuButton to="/profile/bonuses/">
                         <FaMoneyBill />
                         Бонусная программа
@@ -81,6 +82,10 @@ export function ProfileDrawer({
                       <MenuButton to="/profile/support/">
                         <HiSupport />
                         Поддержка
+                      </MenuButton>
+                      <MenuButton to="/">
+                        <TiArrowBackOutline />
+                        Вернуться на главную
                       </MenuButton>
                     </VStack>
 
