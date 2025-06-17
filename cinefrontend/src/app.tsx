@@ -11,7 +11,7 @@ export const app = axios.create({
 });
 
 export const socket = io(
-  import.meta.env.PROD ? `${BASE_URL}`: "http://localhost:5000/", {
+  import.meta.env.PROD ? `http://46.149.71.62:5000/`: "http://localhost:5000/", {
     transports: ['websocket', 'polling'],
     autoConnect: true,
   }
