@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect, useState } from "react";
 import {
   Button,
   Card,
@@ -10,12 +10,15 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import dayjs from "dayjs";
+import {dayjs} from '../../utils/dates';
 import { groupByKey } from "../../utils/arrays";
 import { getCurrentDate } from "../../utils/dates";
 import { Avatar } from "../../components/ui/avatar";
 import { styled } from "styled-components";
 import { useColorModeValue } from "../../components/ui/color-mode";
+import { socket } from "../../app";
+import { $user } from "../../effector/users.store";
+import { useUnit } from "effector-react";
 
 const SupportHeader = chakra(Card.Root, {
   base: {
@@ -30,8 +33,8 @@ const SupportHeader = chakra(Card.Root, {
     borderRadius: 0,
     borderTopRadius: "15px",
     _light: {
-      bg: 'gray.100',
-    }
+      bg: "gray.100",
+    },
   },
 });
 
@@ -49,7 +52,7 @@ const SupportRoot = styled.div`
 
 const SupportWrapper = chakra("div", {
   base: {
-    width: {lg: "80%", base: '100%'},
+    width: { lg: "80%", base: "100%" },
     justifySelf: "center",
     borderColor: "gray.900",
     // borderWidth: '2px',
@@ -60,6 +63,7 @@ const SupportWrapper = chakra("div", {
 
 const MessagesContainer = chakra("div", {
   base: {
+    height: "65vh",
     maxHeight: "65vh",
     overflowY: "auto",
     justifySelf: "center",
@@ -93,8 +97,8 @@ type MessagesProps = {
 };
 
 function Message({ isMine, text, dateTime }: MessageProps) {
-  const incomingMessageBg = useColorModeValue('purple.300', 'purple.900');
-  const outcomingMessageBg = useColorModeValue('gray.100', 'gray.800');
+  const incomingMessageBg = useColorModeValue("purple.300", "purple.900");
+  const outcomingMessageBg = useColorModeValue("gray.100", "gray.800");
 
   return (
     <MessageContainer
@@ -115,9 +119,10 @@ function Messages({ messages }: MessagesProps) {
   const groupedMessages = useMemo(
     () =>
       groupByKey(
-        messages.sort((prev, current) =>
-          dayjs(current.dateTime).isBefore(dayjs(prev.dateTime!)) ? 1 : -1
-        ),
+        // messages.sort((prev, current) =>
+        //   dayjs(current.dateTime).isBefore(dayjs(prev.dateTime!)) ? -1 : 1
+        // ),
+        messages,
         (message) => {
           const currentDate = getCurrentDate();
           const parsedDate = dayjs(message.dateTime);
@@ -162,30 +167,59 @@ function Messages({ messages }: MessagesProps) {
   );
 }
 
-const messagesList: MessagesProps["messages"] = [
-  {
-    isMine: true,
-    text: "Привет, мир",
-    dateTime: "2025-05-17 22:44:10",
-  },
-  {
-    isMine: false,
-    text: "Привет, мир!!!",
-    dateTime: "2025-05-17 23:44:40",
-  },
-  {
-    isMine: true,
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    dateTime: "2025-05-17 23:44:40",
-  },
-  {
-    isMine: false,
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    dateTime: "2025-05-17 23:44:40",
-  },
-];
+// const messagesList: MessagesProps["messages"] = [
+//   {
+//     isMine: true,
+//     text: "Привет, мир",
+//     dateTime: "2025-05-17 22:44:10",
+//   },
+//   {
+//     isMine: false,
+//     text: "Привет, мир!!!",
+//     dateTime: "2025-05-17 23:44:40",
+//   },
+//   {
+//     isMine: true,
+//     text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+//     dateTime: "2025-05-17 23:44:40",
+//   },
+//   {
+//     isMine: false,
+//     text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+//     dateTime: "2025-05-17 23:44:40",
+//   },
+// ];
 
 export function Support() {
+  const [user] = useUnit([$user]);
+  const [messageText, setMessageText] = useState<string>("");
+  const [messages, setMessages] = useState<any[]>([]);
+
+  useEffect(() => {
+    socket.on("adminMessage", (data: any) => {
+      setMessages((prev) =>
+        [
+          ...prev,
+          { text: data.text, dateTime: data.date_time, isMine: false },
+        ]
+      );
+    });
+  }, []);
+
+  const handleSendMessage = async () => {
+    socket.emit("userMessage", {
+      text: messageText,
+      user: user,
+    });
+    setMessages((prev) =>
+      [
+        ...prev,
+        { text: messageText, dateTime: dayjs().toISOString(), isMine: true },
+      ]
+    );
+    setMessageText("");
+  };
+
   return (
     <SupportRoot>
       <SupportWrapper>
@@ -194,19 +228,22 @@ export function Support() {
             <Avatar width="50px" height="50px" />
             <Text textStyle="xl">Техническая поддержка</Text>
           </SupportHeader>
-          <Messages messages={messagesList} />
+          <Messages messages={messages} />
           <Group attached w="full" width="90%" borderRadius="15px">
             <Input
               width="100%"
               placeholder="Сообщение"
               borderLeftRadius="15px"
               size="lg"
+              onChange={({ target }) => setMessageText(target?.value)}
+              value={messageText}
             />
             <Button
               bg="bg.subtle"
               variant="outline"
               borderRightRadius="15px"
               size="lg"
+              onClick={handleSendMessage}
             >
               Отправить
             </Button>

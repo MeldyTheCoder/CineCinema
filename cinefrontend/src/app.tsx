@@ -1,5 +1,6 @@
 import axios from "axios";
 import { logoutFx } from "./effector/users.store";
+import io from 'socket.io-client';
 
 const IS_PROD = import.meta.env.PROD;
 
@@ -8,6 +9,13 @@ export const BASE_URL = IS_PROD ? `${location.origin}/api/` : 'http://localhost:
 export const app = axios.create({
     baseURL: BASE_URL
 });
+
+export const socket = io(
+  import.meta.env.PROD ? `${BASE_URL}`: "http://localhost:5000/", {
+    transports: ['polling'],
+    autoConnect: true,
+  }
+);
 
 app.interceptors.request.use(async (request) => {
     const accessToken = localStorage.getItem('accessToken');

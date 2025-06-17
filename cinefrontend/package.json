@@ -17,6 +17,7 @@
     "@types/google-map-react": "^2.1.10",
     "@types/qrcode": "^1.5.5",
     "@types/qs": "^6.9.18",
+    "@types/socket.io-client": "^1.4.36",
     "@yandex/ymaps3-types": "^1.0.16159873",
     "axios": "^1.8.1",
     "dayjs": "^1.11.13",
@@ -38,6 +39,7 @@
     "react-router-dom": "^7.3.0",
     "react-slick": "^0.30.3",
     "rsuite": "^5.80.1",
+    "socket.io-client": "^4.8.1",
     "styled-components": "^6.1.15",
     "use-mask-input": "^3.4.2",
     "zod": "^3.25.64"

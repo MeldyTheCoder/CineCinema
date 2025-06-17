@@ -6,3 +6,6 @@ documents/__pycache__
 sms/venv
 sms/__pycache__
 ssl
+support-bot/venv
+support-bot/__pycache__
+support-bot/.idea
