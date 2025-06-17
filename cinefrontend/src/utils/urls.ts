@@ -17,5 +17,5 @@ export function parseUrl(url: string): string {
     return url;
   }
 
-  return `${BASE_URL}/media/${url}`;
+  return `${BASE_URL}/media/${url}/`;
 }
